@@ -1,7 +1,6 @@
-const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
 
-// 持久化存储（窗口位置、设置）
 let store;
 (async () => {
   const { default: Store } = await import('electron-store');
@@ -9,13 +8,77 @@ let store;
 })();
 
 let mainWindow;
+let tray = null;
 let isAlwaysOnTop = false;
+let windowHidden = false; // 监控窗口是否被用户隐藏
 
 function getStore(key, def) {
   return store ? store.get(key, def) : def;
 }
 function setStore(key, val) {
   if (store) store.set(key, val);
+}
+
+function createTray() {
+  const iconPath = path.join(__dirname, 'assets', 'icon.ico');
+  let trayIcon;
+  try {
+    trayIcon = nativeImage.createFromPath(iconPath);
+    if (trayIcon.isEmpty()) trayIcon = nativeImage.createEmpty();
+  } catch {
+    trayIcon = nativeImage.createEmpty();
+  }
+
+  tray = new Tray(trayIcon);
+  tray.setToolTip('LHM Monitor');
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示监控窗口',
+      click: () => showWindow(),
+    },
+    {
+      label: '隐藏监控窗口',
+      click: () => hideWindow(),
+    },
+    { type: 'separator' },
+    {
+      label: '退出程序',
+      click: () => {
+        if (mainWindow) {
+          setStore('windowBounds', mainWindow.getBounds());
+          mainWindow.destroy();
+        }
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setContextMenu(contextMenu);
+
+  tray.on('double-click', () => {
+    if (windowHidden) showWindow();
+    else {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
+function showWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.show();
+  mainWindow.setSkipTaskbar(false);
+  windowHidden = false;
+  mainWindow.webContents.send('window-visibility', true);
+}
+
+function hideWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.hide();
+  mainWindow.setSkipTaskbar(true);
+  windowHidden = true;
+  mainWindow.webContents.send('window-visibility', false);
 }
 
 function createWindow() {
@@ -35,8 +98,8 @@ function createWindow() {
     y: savedBounds.y,
     minWidth: 300,
     minHeight: 200,
-    frame: false,               // 无系统标题栏
-    transparent: true,          // 允许透明/亚克力
+    frame: false,
+    transparent: true,
     hasShadow: true,
     resizable: true,
     alwaysOnTop: false,
@@ -45,27 +108,35 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: false,       // 允许访问局域网 http
+      webSecurity: false,
     },
     icon: path.join(__dirname, 'assets', 'icon.ico'),
-    // Windows 11 Mica 效果
     backgroundMaterial: 'mica',
   });
 
-  // 尝试启用 Win11 Mica（Electron 28+）
   try {
     mainWindow.setBackgroundMaterial('mica');
   } catch (_) {}
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
-  // 记忆窗口位置与尺寸
   mainWindow.on('moved', saveBounds);
   mainWindow.on('resized', saveBounds);
 
-  // 开发模式显示 DevTools（可注释掉）
-  // mainWindow.webContents.openDevTools({ mode: 'detach' });
+  // 关闭按钮改为隐藏到托盘
+  mainWindow.on('close', (e) => {
+    if (!app.isQuitting) {
+      e.preventDefault();
+      hideWindow();
+    }
+  });
+
+  createTray();
 }
+
+// 主动暴露 hide/show 到渲染进程
+let hideFn = hideWindow;
+let showFn = showWindow;
 
 function saveBounds() {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -74,12 +145,24 @@ function saveBounds() {
 }
 
 // ── IPC handlers ──────────────────────────────
-ipcMain.on('win-close',    () => { saveBounds(); mainWindow.close(); });
-ipcMain.on('win-minimize', () => mainWindow.minimize());
+ipcMain.on('win-close', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    hideWindow();
+  }
+});
+
+ipcMain.on('win-minimize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();
+});
+
 ipcMain.on('win-maximize', () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
   if (mainWindow.isMaximized()) mainWindow.unmaximize();
   else mainWindow.maximize();
 });
+
+ipcMain.on('win-hide', () => hideWindow());
+ipcMain.on('win-show', () => showWindow());
 
 ipcMain.on('win-toggle-top', (event) => {
   isAlwaysOnTop = !isAlwaysOnTop;
@@ -87,18 +170,16 @@ ipcMain.on('win-toggle-top', (event) => {
   event.reply('top-state', isAlwaysOnTop);
 });
 
-// 拖动窗口
-ipcMain.on('win-drag-start', () => {});
-
-// 读/写持久化设置
 ipcMain.handle('store-get', (_, key, def) => getStore(key, def));
 ipcMain.on('store-set', (_, key, val) => setStore(key, val));
 
-app.whenReady().then(() => {
-  // 等待 store 初始化
-  setTimeout(createWindow, 100);
-});
+// 阻止 macOS 默认 quit（Electron 窗口全部关闭时的行为）
+app.on('before-quit', () => { app.isQuitting = true; });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  // Windows 下不quit，留给托盘
+});
+
+app.whenReady().then(() => {
+  setTimeout(createWindow, 100);
 });

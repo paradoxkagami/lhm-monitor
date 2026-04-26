@@ -7,7 +7,6 @@
 <style>
 /* ══════════════════════════════════════════════════════
    Windows 11 Fluent Design System
-   ──────────────────────────────────────────────────────
    字体   : Segoe UI Variable
    材质   : Mica (主背景) + Acrylic (面板)
    色彩   : #系统蓝 #0078D4 + #浅色表面
@@ -111,29 +110,46 @@ body {
 }
 
 /* ════════════════════════════════════════
-   标题栏
+   标题栏（整体可拖动）
 ════════════════════════════════════════ */
 #titlebar {
   flex-shrink: 0;
   display: flex; align-items: center;
   height: var(--title-h);
-  padding: 0 4px 0 10px;
-  background: transparent;
+  padding: 0;
+  position: relative;
+  /* 整个标题栏都是拖动区域 */
   -webkit-app-region: drag; app-region: drag;
   user-select: none;
-  gap: 6px;
 }
-#titlebar > * { -webkit-app-region: no-drag; app-region: no-drag; }
 
+/* 拖动热区：占据标题栏全部（除按钮区） */
+.titlebar-drag-zone {
+  position: absolute;
+  left: 0; top: 0; right: 138px; bottom: 0;
+  /* 完全透明，点击穿透到窗口拖动 */
+  pointer-events: auto;
+}
+
+#titlebar > *:not(.titlebar-drag-zone) {
+  position: relative; /* 相对于标题栏定位 */
+  z-index: 1;
+  /* 按钮等控件不可拖动 */
+  -webkit-app-region: no-drag; app-region: no-drag;
+  pointer-events: auto;
+}
+
+/* 图标 */
 .tb-icon {
-  width: 16px; height: 16px; margin-right: 6px; flex-shrink: 0;
-  -webkit-app-region: drag;
+  width: 16px; height: 16px; margin-left: 10px; margin-right: 6px; flex-shrink: 0;
+  pointer-events: none;
 }
 .tb-title {
   font-size: calc(11px * var(--scale-factor));
   font-weight: 400; color: var(--text-secondary);
-  flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  -webkit-app-region: drag;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  pointer-events: none;
+  flex: 1;
 }
 
 .tb-info { display: flex; align-items: center; gap: 8px; margin-right: 4px; }
@@ -173,6 +189,9 @@ body {
   100% { transform: scale(1) rotate(0deg); }
 }
 
+/* 隐藏到托盘按钮 */
+.tb-btn.tray-btn:hover { background: rgba(255,255,255,.08); }
+
 /* ── Win11 三按钮 ── */
 .win-controls {
   display: flex; align-items: stretch; height: var(--title-h); margin-left: 2px;
@@ -197,7 +216,7 @@ body {
   background: var(--surf-layer1);
   border-bottom: 1px solid transparent;
 }
-#settingsDrawer.open { max-height: 420px; border-bottom-color: var(--border-subtle); }
+#settingsDrawer.open { max-height: 460px; border-bottom-color: var(--border-subtle); }
 
 /* ── Tab 栏 ── */
 .tab-bar {
@@ -246,7 +265,7 @@ body {
 .win-input.w-56  { width: 56px; }
 
 /* ── 滑块 ── */
-.win-slider { accent-color: var(--accent); cursor: pointer; }
+.win-slider { accent-color: var(--accent); cursor: pointer; width: 100px; }
 .slider-badge {
   font-size: 10px; color: var(--text-secondary);
   background: var(--surf-layer2); border-radius: 4px;
@@ -413,13 +432,27 @@ input[type="color"] { opacity: 0; position: absolute; width: 0; height: 0; }
   background: var(--accent-subtle); border-radius: 4px;
   padding: 1px 5px; cursor: help;
 }
+
+/* ── 窗口隐藏提示（托盘模式下显示）── */
+#hiddenBanner {
+  display: none;
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: var(--surf-layer2); border: 1px solid var(--border-strong);
+  border-radius: var(--r-win); padding: 24px 32px; text-align: center; z-index: 9999;
+  box-shadow: 0 16px 48px rgba(0,0,0,.5);
+}
+#hiddenBanner p { font-size: 13px; color: var(--text-primary); margin-bottom: 12px; }
+#hiddenBanner button { margin: 0 4px; }
 </style>
 </head>
 <body>
 
 <!-- ══ 标题栏 ══ -->
 <div id="titlebar">
-  <svg class="tb-icon" viewBox="0 0 16 16" fill="none" style="-webkit-app-region:drag">
+  <!-- 全宽拖动热区 -->
+  <div class="titlebar-drag-zone"></div>
+
+  <svg class="tb-icon" viewBox="0 0 16 16" fill="none">
     <rect width="16" height="16" rx="3" fill="rgba(0,120,212,0.9)"/>
     <path d="M3 11.5 L3 6.5 L5.5 8.5 L8 4 L10.5 9 L12.5 7 L13 11.5"
           stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -444,6 +477,14 @@ input[type="color"] { opacity: 0; position: absolute; width: 0; height: 0; }
       <path d="M9.5 2L12 4.5L9.5 7H7.5L5.5 9V11L4 12.5L2.5 11L4 9.5H2L1.5 8L3.5 6H5.5L8.5 3L9.5 2Z"
             fill="currentColor" opacity=".85"/>
       <circle cx="9" cy="5" r="1" fill="rgba(255,255,255,.5)"/>
+    </svg>
+  </button>
+
+  <!-- 隐藏到托盘按钮 -->
+  <button class="tb-btn tray-btn" id="btnTray" title="隐藏到托盘" onclick="hideToTray()">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+      <rect x="1" y="2" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.2" fill="none"/>
+      <path d="M5 11V13H9V11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/>
     </svg>
   </button>
 
@@ -502,13 +543,13 @@ input[type="color"] { opacity: 0; position: absolute; width: 0; height: 0; }
     <div class="srow">
       <label>透明度</label>
       <input class="win-slider" id="opacityInput" type="range" min="40" max="100" value="97"
-             oninput="applyAppearance()"/>
+             oninput="applyAppearance()" onchange="applyAppearance()"/>
       <span class="slider-badge" id="opacityLabel">97%</span>
     </div>
     <div class="srow">
       <label>背景模糊</label>
       <input class="win-slider" id="blurInput" type="range" min="0" max="60" value="32"
-             oninput="applyAppearance()"/>
+             oninput="applyAppearance()" onchange="applyAppearance()"/>
       <span class="slider-badge" id="blurLabel">32px</span>
       <button class="win-btn win-btn-icon" id="blurOffBtn" onclick="setBlurOff()">关闭模糊</button>
     </div>
@@ -544,25 +585,25 @@ input[type="color"] { opacity: 0; position: absolute; width: 0; height: 0; }
     </div>
     <div class="srow">
       <label>字体大小</label>
-      <input class="win-slider" id="fontSizeInput" type="range" min="9" max="20" value="13"
-             oninput="applyLayout()"/>
+      <input class="win-slider" id="fontSizeInput" type="range" min="9" max="32" value="13"
+             oninput="applyLayout()" onchange="applyLayout()"/>
       <span class="slider-badge" id="fontSizeLabel">13px</span>
       <button class="win-btn win-btn-icon" onclick="setFontSize(11)">小</button>
       <button class="win-btn win-btn-icon" onclick="setFontSize(13)">中</button>
-      <button class="win-btn win-btn-icon" onclick="setFontSize(16)">大</button>
+      <button class="win-btn win-btn-icon" onclick="setFontSize(24)">大</button>
     </div>
     <div class="srow">
       <label>字体</label>
       <div class="btn-group">
-        <button class="win-btn win-btn-icon" id="font-segoe-btn"  onclick="setFontFamily('')">系统默认</button>
+        <button class="win-btn win-btn-icon" id="font-segoe-btn" onclick="setFontFamily('')">系统默认</button>
         <button class="win-btn win-btn-icon" onclick="setFontFamily('Microsoft YaHei UI')">微软雅黑</button>
         <button class="win-btn win-btn-icon" onclick="setFontFamily('PingFang SC')">苹方</button>
       </div>
     </div>
     <div class="srow">
       <label>DPI 缩放</label>
-      <input class="win-slider" id="scaleInput" type="range" min="50" max="150" value="100"
-             oninput="applyLayout()"/>
+      <input class="win-slider" id="scaleInput" type="range" min="50" max="300" value="100"
+             oninput="applyLayout()" onchange="applyLayout()"/>
       <span class="slider-badge" id="scaleLabel">100%</span>
       <span class="hint" id="dpiHint"></span>
     </div>
@@ -627,8 +668,17 @@ function updatePinUI(v) {
   btn.title = v ? '取消置顶 (T)' : '置顶 (T)';
   if (v) {
     btn.classList.remove('pin-anim');
-    void btn.offsetWidth; // reflow
+    void btn.offsetWidth;
     btn.classList.add('pin-anim');
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   隐藏到托盘
+═══════════════════════════════════════════════════ */
+function hideToTray() {
+  if (isElectron) {
+    window.electronAPI.hide();
   }
 }
 
@@ -636,8 +686,7 @@ function updatePinUI(v) {
    设置抽屉
 ═══════════════════════════════════════════════════ */
 function toggleSettings() {
-  const drawer = document.getElementById('settingsDrawer');
-  drawer.classList.toggle('open');
+  document.getElementById('settingsDrawer').classList.toggle('open');
 }
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -658,12 +707,10 @@ function setTheme(mode) {
     document.documentElement.setAttribute('data-theme', 'light');
     document.getElementById('theme-light-btn').classList.add('active');
   } else {
-    // auto: follow system
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (prefersDark) document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', 'light');
     document.getElementById('theme-auto-btn').classList.add('active');
-    // Listen for system changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       if (currentTheme === 'auto') {
         if (e.matches) document.documentElement.removeAttribute('data-theme');
@@ -703,26 +750,24 @@ function syncBgColor() {
 function applyAppearance() {
   const opacity = document.getElementById('opacityInput').value;
   const blur    = document.getElementById('blurInput').value;
-  const bgHex  = document.getElementById('bgColorHex').value.trim();
+  const bgHex   = document.getElementById('bgColorHex').value.trim();
 
   document.getElementById('opacityLabel').textContent = opacity + '%';
   document.getElementById('blurLabel').textContent = blur === '0' ? '关闭' : blur + 'px';
 
   document.body.style.opacity = opacity / 100;
 
-  // background blur via backdrop-filter
+  const isDark = !document.documentElement.hasAttribute('data-theme');
+
   if (blur > 0) {
     document.body.style.backdropFilter = `blur(${blur}px)`;
     document.body.style.webkitBackdropFilter = `blur(${blur}px)`;
-    // Mica fallback: use semi-transparent bg
-    const isDark = !document.documentElement.hasAttribute('data-theme');
     document.body.style.background = bgHex === 'transparent'
       ? (isDark ? 'rgba(32,32,32,0.85)' : 'rgba(243,243,243,0.80)')
       : hexToRgba(bgHex, isDark ? 0.85 : 0.80);
   } else {
     document.body.style.backdropFilter = 'none';
     document.body.style.webkitBackdropFilter = 'none';
-    const isDark = !document.documentElement.hasAttribute('data-theme');
     document.body.style.background = bgHex === 'transparent'
       ? (isDark ? 'rgba(32,32,32,0.97)' : 'rgba(243,243,243,0.97)')
       : hexToRgba(bgHex, 0.97);
@@ -765,7 +810,10 @@ function setColMode(mode) {
 }
 
 function setFontSize(size) {
-  document.getElementById('fontSizeInput').value = size;
+  const input = document.getElementById('fontSizeInput');
+  input.value = size;
+  // 同步触发 oninput（立即应用，不需要等用户放开滑块）
+  input.dispatchEvent(new Event('input', { bubbles: true }));
   applyLayout();
 }
 
@@ -778,17 +826,20 @@ function setFontFamily(font) {
   } else {
     root.style.setProperty('--font-family', `'${font}', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif`);
   }
-  document.getElementById('font-segoe-btn').classList.add('active');
   storageSet('lhm_fontfamily', font || '');
 }
 
 function applyLayout() {
   const fontSize = document.getElementById('fontSizeInput').value;
   const scale    = document.getElementById('scaleInput').value;
+
   document.getElementById('fontSizeLabel').textContent = fontSize + 'px';
   document.getElementById('scaleLabel').textContent    = scale + '%';
+
+  // 直接设置在 documentElement 上，影响所有继承的元素
   document.documentElement.style.setProperty('--base-font', fontSize + 'px');
   document.documentElement.style.setProperty('--scale-factor', scale / 100);
+
   storageSet('lhm_fontsize', +fontSize);
   storageSet('lhm_scale', +scale);
   computeAutoCols();
@@ -800,10 +851,8 @@ function applyLayout() {
 function computeAutoCols() {
   if (colMode !== 'auto') return;
   const bodyW = document.body.clientWidth;
-  const pad   = 16; // 标题栏+状态栏高度估算
-  const availW = bodyW - pad;
-  const cardMinW = 200 * (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-factor')) || 1);
-  const cols = Math.max(1, Math.min(4, Math.floor(availW / cardMinW)));
+  const cardMinW = 200 * ((parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-factor')) || 1));
+  const cols = Math.max(1, Math.min(4, Math.floor(bodyW / cardMinW)));
   document.getElementById('dashboard').style.setProperty('--cols', cols);
   const hint = document.getElementById('autoColsHint');
   if (hint) hint.title = `当前宽度 ${bodyW}px → ${cols} 列`;
@@ -927,7 +976,6 @@ function parseValue(str) {
   return m ? { num: parseFloat(m[1]), unit: m[2].trim() } : { num: null, unit: str };
 }
 
-// 颜色
 function tempColor(v) {
   return v < 50 ? 'var(--success)' : v < 70 ? '#FCE100' : v < 85 ? 'var(--caution)' : 'var(--error)';
 }
@@ -954,14 +1002,15 @@ function deviceIcon(n) {
   return '📊';
 }
 
-// UI 组件
 function barHtml(pct, color, h = 3) {
   return `<div class="bar-wrap" style="height:${h}px">
     <div class="bar-fill" style="width:${Math.min(100,Math.max(0,pct))}%;background:${color}"></div>
   </div>`;
 }
 function gaugeHtml(pct, color, valStr, unit = '') {
-  const size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gauge-size')) || 50;
+  const rootStyle = getComputedStyle(document.documentElement);
+  const sizeStr = rootStyle.getPropertyValue('--gauge-size').trim();
+  const size = parseFloat(sizeStr) || 50;
   const r = (size / 2) - 5;
   const c = 2 * Math.PI * r;
   const offset = c - (Math.min(100, Math.max(0, pct)) / 100) * c;
@@ -976,7 +1025,6 @@ function gaugeHtml(pct, color, valStr, unit = '') {
   </div>`;
 }
 
-// 卡片
 function buildCard(device, color) {
   const name = device.Text || 'Device';
   const groups = {};
@@ -1087,7 +1135,6 @@ function renderDashboard(data) {
   }
   document.getElementById('dashboard').innerHTML =
     devices.map(d => buildCard(d, deviceColor(d.Text||''))).join('');
-  // Re-compute auto cols after render
   computeAutoCols();
 }
 
@@ -1097,7 +1144,6 @@ function renderDashboard(data) {
 document.addEventListener('keydown', e => {
   if (e.key === 's' || e.key === 'S') toggleSettings();
   if (e.key === 't' || e.key === 'T') togglePin();
-  // Enter in IP field = connect
   if (e.key === 'Enter' && document.activeElement.id === 'ipInput') applySettings();
 });
 
@@ -1109,7 +1155,7 @@ document.addEventListener('keydown', e => {
   const dpi = Math.round((window.devicePixelRatio || 1) * 100);
   document.getElementById('dpiHint').textContent = `系统 DPI: ${dpi}%`;
 
-  // 加载外观设置
+  // 读取所有设置
   const opacity   = await storageGet('lhm_opacity', 97);
   const blur      = await storageGet('lhm_blur', 32);
   const bgcolor   = await storageGet('lhm_bgcolor', 'transparent');
@@ -1119,10 +1165,16 @@ document.addEventListener('keydown', e => {
   const colmode   = await storageGet('lhm_colmode', 'auto');
   const fontfam   = await storageGet('lhm_fontfamily', '');
 
+  // 先应用字体（立即生效，防止页面刷新后字体大小跳变）
+  document.documentElement.style.setProperty('--base-font', fontSize + 'px');
+  document.documentElement.style.setProperty('--scale-factor', scale / 100);
+
+  // 同步滑块 UI
   document.getElementById('opacityInput').value = opacity;
   document.getElementById('blurInput').value = blur;
   document.getElementById('fontSizeInput').value = fontSize;
   document.getElementById('scaleInput').value = scale;
+  document.getElementById('fontSizeLabel').textContent = fontSize + 'px';
   document.getElementById('scaleLabel').textContent = scale + '%';
 
   setBgColor(bgcolor);
@@ -1130,7 +1182,6 @@ document.addEventListener('keydown', e => {
   setColMode(colmode);
   if (fontfam) setFontFamily(fontfam);
   applyAppearance();
-  applyLayout();
 
   // 加载连接设置
   await loadSettings();
