@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LHM Monitor</title>
+<style>
+/* ══════════════════════════════════════════════════════
+   Windows 11 Fluent Design System
+   ──────────────────────────────────────────────────────
+   字体   : Segoe UI Variable
+   材质   : Mica (主背景) + Acrylic (面板)
+   色彩   : #系统蓝 #0078D4 + #浅色表面
+   圆角   : 8px (控件) / 4px (小控件)
+   阴影   : Win11 层叠阴影
+══════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Segoe+UI+Variable+Display:wght@300;400;600;700&display=swap');
+
+/* ── CSS 变量：深色主题（默认）── */
+:root {
+  --accent:        #0078D4;
+  --accent-light:  #0091F8;
+  --accent-dark:   #005A9E;
+  --accent-subtle: rgba(0,120,212,0.12);
+
+  /* Mica 表面色 */
+  --surf-base:     rgba(32,32,32,0.85);
+  --surf-layer1:   rgba(44,44,44,0.80);
+  --surf-layer2:   rgba(58,58,58,0.75);
+  --surf-layer3:   rgba(72,72,72,0.70);
+  --surf-blur:     32px;
+
+  /* 边框 */
+  --border-subtle: rgba(255,255,255,0.09);
+  --border-strong: rgba(255,255,255,0.15);
+
+  /* 文字 */
+  --text-primary:   rgba(255,255,255,0.96);
+  --text-secondary: rgba(255,255,255,0.63);
+  --text-tertiary:  rgba(255,255,255,0.38);
+  --text-disabled:  rgba(255,255,255,0.28);
+
+  /* 语义色 */
+  --success: #6CCB5F;
+  --warning: #FCE100;
+  --caution: #F7630C;
+  --error:   #FF99A4;
+
+  /* 间距 / 圆角 */
+  --r-ctrl: 8px;
+  --r-card: 8px;
+  --r-win:  12px;
+
+  /* 字体缩放 */
+  --base-font:   13px;
+  --scale-factor: 1;
+  --win-opacity: 0.97;
+  --bg-blur: 32px;
+  --bg-color: transparent;
+
+  /* 响应式尺寸 */
+  --card-pad:    clamp(8px, 1.5vw, 14px);
+  --gauge-size:  clamp(44px, 7vw, 60px);
+  --title-h:     32px;
+  --status-h:    22px;
+}
+
+/* ── CSS 变量：浅色主题 ── */
+[data-theme="light"] {
+  --surf-base:     rgba(243,243,243,0.80);
+  --surf-layer1:   rgba(255,255,255,0.75);
+  --surf-layer2:   rgba(255,255,255,0.65);
+  --surf-layer3:   rgba(255,255,255,0.55);
+  --border-subtle: rgba(0,0,0,0.07);
+  --border-strong: rgba(0,0,0,0.12);
+  --text-primary:   rgba(0,0,0,0.90);
+  --text-secondary: rgba(0,0,0,0.60);
+  --text-tertiary:  rgba(0,0,0,0.35);
+  --text-disabled:  rgba(0,0,0,0.24);
+  --surf-blur:     20px;
+  --accent:        #0078D4;
+  --accent-light:  #0091F8;
+  --accent-subtle: rgba(0,120,212,0.10);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-family, 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif);
+  font-size: calc(var(--base-font) * var(--scale-factor));
+  color: var(--text-primary);
+  display: flex; flex-direction: column;
+  height: 100vh;
+  border-radius: var(--r-win);
+  overflow: hidden;
+  background: var(--bg-color);
+  opacity: var(--win-opacity);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.50),
+    0 2px 8px  rgba(0,0,0,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  outline: 1px solid var(--border-subtle);
+}
+
+/* ════════════════════════════════════════
+   标题栏
+════════════════════════════════════════ */
+#titlebar {
+  flex-shrink: 0;
+  display: flex; align-items: center;
+  height: var(--title-h);
+  padding: 0 4px 0 10px;
+  background: transparent;
+  -webkit-app-region: drag; app-region: drag;
+  user-select: none;
+  gap: 6px;
+}
+#titlebar > * { -webkit-app-region: no-drag; app-region: no-drag; }
+
+.tb-icon {
+  width: 16px; height: 16px; margin-right: 6px; flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+.tb-title {
+  font-size: calc(11px * var(--scale-factor));
+  font-weight: 400; color: var(--text-secondary);
+  flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  -webkit-app-region: drag;
+}
+
+.tb-info { display: flex; align-items: center; gap: 8px; margin-right: 4px; }
+.tb-pcname { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.tb-update  { font-size: 10px; color: var(--text-tertiary); }
+
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-tertiary); flex-shrink: 0; transition: background .3s;
+}
+.status-dot.online { background: var(--success); animation: pulse 2.5s infinite; }
+.status-dot.error  { background: var(--error); }
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(108,203,95,.4); }
+  50%      { box-shadow: 0 0 0 4px rgba(108,203,95,0); }
+}
+
+/* ── 图标按钮 ── */
+.tb-btn {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent;
+  border-radius: 4px; cursor: pointer;
+  color: var(--text-tertiary);
+  transition: background .12s, color .12s;
+  flex-shrink: 0;
+}
+.tb-btn:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+.tb-btn.pinned { color: var(--accent-light); }
+.tb-btn.pinned:hover { background: rgba(0,145,248,.15); }
+.tb-btn.pin-anim {
+  animation: pinPop .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pinPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.3) rotate(-15deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ── Win11 三按钮 ── */
+.win-controls {
+  display: flex; align-items: stretch; height: var(--title-h); margin-left: 2px;
+}
+.wc-btn {
+  width: 46px; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; cursor: pointer;
+  color: var(--text-secondary);
+  transition: background .1s, color .1s;
+}
+.wc-btn:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+.wc-btn.close:hover { background: #C42B1C; color: #fff; }
+
+/* ════════════════════════════════════════
+   设置抽屉（Tab 版本）
+════════════════════════════════════════ */
+#settingsDrawer {
+  flex-shrink: 0;
+  max-height: 0; overflow: hidden;
+  transition: max-height .3s cubic-bezier(.4,0,.2,1);
+  background: var(--surf-layer1);
+  border-bottom: 1px solid transparent;
+}
+#settingsDrawer.open { max-height: 420px; border-bottom-color: var(--border-subtle); }
+
+/* ── Tab 栏 ── */
+.tab-bar {
+  display: flex; align-items: center;
+  padding: 0 10px; gap: 2px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,.12);
+}
+.tab-btn {
+  padding: 6px 12px; border: none; background: transparent;
+  cursor: pointer; color: var(--text-tertiary);
+  font-size: 11px; font-family: inherit;
+  border-radius: 6px 6px 0 0;
+  border-bottom: 2px solid transparent;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.tab-btn:hover { background: rgba(255,255,255,.05); color: var(--text-secondary); }
+.tab-btn.active {
+  color: var(--accent-light); border-bottom-color: var(--accent-light);
+  background: rgba(0,120,212,.08);
+}
+.tab-content { display: none; padding: 10px 12px; }
+.tab-content.active { display: block; }
+
+/* ── 设置网格 ── */
+.srow {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap; margin-bottom: 8px;
+}
+.srow label {
+  font-size: 11px; color: var(--text-tertiary); white-space: nowrap;
+}
+
+/* ── 输入框 ── */
+.win-input {
+  background: var(--surf-layer2); border: 1px solid var(--border-strong);
+  border-radius: var(--r-ctrl); color: var(--text-primary);
+  padding: 4px 10px;
+  font-size: 11px; font-family: inherit;
+  outline: none; transition: border-color .15s, background .15s;
+}
+.win-input:hover  { border-color: rgba(255,255,255,.25); }
+.win-input:focus  { border-color: var(--accent); border-bottom-width: 2px; background: var(--surf-layer3); }
+.win-input.w-120 { width: 120px; }
+.win-input.w-70  { width: 70px; }
+.win-input.w-56  { width: 56px; }
+
+/* ── 滑块 ── */
+.win-slider { accent-color: var(--accent); cursor: pointer; }
+.slider-badge {
+  font-size: 10px; color: var(--text-secondary);
+  background: var(--surf-layer2); border-radius: 4px;
+  padding: 1px 6px; min-width: 28px; text-align: center;
+  border: 1px solid var(--border-subtle);
+}
+
+/* ── 按钮 ── */
+.win-btn {
+  padding: 4px 12px; border-radius: var(--r-ctrl);
+  border: none; cursor: pointer; font-size: 11px;
+  font-family: inherit; font-weight: 400;
+  transition: background .12s, transform .08s; white-space: nowrap;
+}
+.win-btn:active { transform: scale(.97); }
+.win-btn-accent { background: var(--accent); color: #fff; border-bottom: 1px solid rgba(0,0,0,.3); }
+.win-btn-accent:hover { background: var(--accent-light); }
+.win-btn-subtle { background: var(--surf-layer2); color: var(--text-primary); border: 1px solid var(--border-strong); }
+.win-btn-subtle:hover { background: var(--surf-layer3); }
+.win-btn-icon { background: transparent; border: 1px solid var(--border-strong); color: var(--text-secondary); padding: 3px 8px; font-size: 10px; }
+.win-btn-icon:hover { background: var(--surf-layer2); color: var(--text-primary); }
+.win-btn-icon.active { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent-light); }
+
+/* ── 颜色选择器行 ── */
+.color-row { display: flex; align-items: center; gap: 6px; }
+.color-swatch {
+  width: 20px; height: 20px; border-radius: 4px;
+  border: 1px solid var(--border-strong); cursor: pointer;
+  transition: transform .12s; padding: 0;
+}
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch input { opacity: 0; position: absolute; width: 0; height: 0; }
+input[type="color"] { opacity: 0; position: absolute; width: 0; height: 0; }
+
+/* ── 主题/布局快捷按钮组 ── */
+.btn-group { display: flex; gap: 2px; }
+.btn-group .win-btn { border-radius: 4px; }
+
+/* ── 提示气泡 ── */
+.hint { font-size: 10px; color: var(--text-tertiary); margin-left: 4px; }
+
+/* ════════════════════════════════════════
+   内容滚动区
+════════════════════════════════════════ */
+#scrollBody {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 8px;
+}
+#scrollBody::-webkit-scrollbar { width: 3px; }
+#scrollBody::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+#scrollBody::-webkit-scrollbar-track { background: transparent; }
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(var(--cols,2), 1fr);
+  gap: 6px;
+}
+
+/* ════════════════════════════════════════
+   卡片
+════════════════════════════════════════ */
+.card {
+  background: var(--surf-layer1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-card);
+  padding: var(--card-pad);
+  transition: background .15s, border-color .15s;
+}
+.card:hover { background: var(--surf-layer2); border-color: var(--border-strong); }
+
+.card-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.card-icon { font-size: clamp(12px, 2vw, 16px); }
+.card-title {
+  font-size: calc(11px * var(--scale-factor)); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── 仪表盘 ── */
+.gauge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.gauge-wrap { position: relative; width: var(--gauge-size); height: var(--gauge-size); flex-shrink: 0; }
+.gauge-svg  { transform: rotate(-90deg); }
+.gauge-track { fill: none; stroke: rgba(128,128,128,.15); stroke-width: 6; }
+.gauge-fill  { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset .55s cubic-bezier(.4,0,.2,1), stroke .4s; }
+.gauge-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-weight: 700; font-size: calc(12px * var(--scale-factor));
+  line-height: 1.15;
+}
+.gauge-center small { font-size: 8px; color: var(--text-tertiary); font-weight: 400; }
+.gauge-info { flex: 1; min-width: 0; }
+.gauge-name { font-size: calc(10px * var(--scale-factor)); font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gauge-sub  { font-size: calc(9px * var(--scale-factor)); color: var(--text-secondary); line-height: 1.7; }
+
+/* ── 进度条 ── */
+.bar-wrap { background: rgba(128,128,128,.12); border-radius: 2px; overflow: hidden; }
+.bar-fill  { height: 100%; border-radius: 2px; transition: width .5s cubic-bezier(.4,0,.2,1), background .4s; }
+
+/* ── 传感器行 ── */
+.sensor-rows { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.sensor-row {
+  display: grid;
+  grid-template-columns: 1fr 60px auto auto;
+  align-items: center; gap: 4px;
+}
+.sensor-name { font-size: calc(9px * var(--scale-factor)); color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sensor-val  { font-size: calc(10px * var(--scale-factor)); font-weight: 600; text-align: right; }
+.sensor-unit { font-size: 9px; color: var(--text-tertiary); min-width: 18px; text-align: right; }
+
+.sensor-row-full {
+  display: flex; align-items: center; gap: 5px; padding: 3px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.sensor-row-full:last-child { border-bottom: none; padding-bottom: 0; }
+.srf-name   { flex: 1; font-size: calc(9px * var(--scale-factor)); color: var(--text-secondary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.srf-val    { font-size: calc(10px * var(--scale-factor)); font-weight: 600; }
+.srf-unit   { font-size: 9px; color: var(--text-tertiary); }
+.srf-minmax { font-size: 8px; color: var(--text-tertiary); white-space: nowrap; }
+
+/* ── 状态页 ── */
+.loading-state {
+  grid-column: 1/-1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 20px; color: var(--text-tertiary); text-align: center;
+}
+.loading-icon { font-size: 32px; margin-bottom: 10px; }
+.loading-msg  { font-size: calc(12px * var(--scale-factor)); color: var(--text-secondary); margin-bottom: 6px; }
+.loading-hint { font-size: calc(10px * var(--scale-factor)); line-height: 1.8; max-width: 240px; }
+.loading-hint b { color: var(--text-secondary); }
+.loading-hint .key {
+  display: inline-block; background: var(--surf-layer2);
+  border: 1px solid var(--border-strong); border-radius: 4px;
+  padding: 1px 6px; font-size: 10px; color: var(--text-primary);
+}
+
+.error-card {
+  grid-column: 1/-1;
+  background: rgba(255,153,164,.08); border: 1px solid rgba(255,153,164,.25);
+  border-radius: var(--r-card); padding: 14px;
+  font-size: 11px; color: var(--error); line-height: 1.9;
+}
+
+/* ── 状态栏 ── */
+#statusbar {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+  height: var(--status-h); padding: 0 10px;
+  font-size: 10px; color: var(--text-tertiary);
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,.15);
+}
+#statusbar #sbUrl { font-family: 'Consolas', monospace; opacity: .55; font-size: 9px; }
+
+/* ── 工具 ── */
+.c-accent { color: var(--accent-light); }
+
+/* ── 分隔线 ── */
+.divider { height: 1px; background: var(--border-subtle); margin: 6px 0; }
+
+/* ── 自动列数模式提示 ── */
+.auto-cols-badge {
+  font-size: 9px; color: var(--accent-light);
+  background: var(--accent-subtle); border-radius: 4px;
+  padding: 1px 5px; cursor: help;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ 标题栏 ══ -->
+<div id="titlebar">
+  <svg class="tb-icon" viewBox="0 0 16 16" fill="none" style="-webkit-app-region:drag">
+    <rect width="16" height="16" rx="3" fill="rgba(0,120,212,0.9)"/>
+    <path d="M3 11.5 L3 6.5 L5.5 8.5 L8 4 L10.5 9 L12.5 7 L13 11.5"
+          stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="8" cy="4" r="1" fill="rgba(255,255,255,0.8)"/>
+  </svg>
+
+  <div class="tb-title" id="tbTitle">LHM Monitor</div>
+
+  <div class="tb-info">
+    <div id="tbPcname" class="tb-pcname" style="display:none"></div>
+    <div id="tbUpdate" class="tb-update"></div>
+    <div id="tbStatusText" style="font-size:10px;color:var(--text-tertiary)">未连接</div>
+    <div id="tbStatusDot" class="status-dot"></div>
+  </div>
+
+  <!-- 设置按钮 -->
+  <button class="tb-btn" id="btnSettings" title="设置 (S)" onclick="toggleSettings()">⚙</button>
+
+  <!-- 置顶按钮 -->
+  <button class="tb-btn" id="btnPin" title="置顶 (T)" onclick="togglePin()">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+      <path d="M9.5 2L12 4.5L9.5 7H7.5L5.5 9V11L4 12.5L2.5 11L4 9.5H2L1.5 8L3.5 6H5.5L8.5 3L9.5 2Z"
+            fill="currentColor" opacity=".85"/>
+      <circle cx="9" cy="5" r="1" fill="rgba(255,255,255,.5)"/>
+    </svg>
+  </button>
+
+  <!-- Win11 三按钮 -->
+  <div class="win-controls">
+    <button class="wc-btn" title="最小化" onclick="window.electronAPI?.minimize()">
+      <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg>
+    </button>
+    <button class="wc-btn" title="最大化" onclick="window.electronAPI?.maximize()">
+      <svg width="10" height="10" viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+    </button>
+    <button class="wc-btn close" title="关闭" onclick="window.electronAPI?.close()">
+      <svg width="10" height="10" viewBox="0 0 10 10">
+        <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══ 设置抽屉（Tab 版） ══ -->
+<div id="settingsDrawer">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('basic', this)">🔗 基础</button>
+    <button class="tab-btn" onclick="switchTab('appearance', this)">🎨 外观</button>
+    <button class="tab-btn" onclick="switchTab('layout', this)">📐 布局</button>
+  </div>
+
+  <!-- 基础设置 -->
+  <div class="tab-content active" id="tab-basic">
+    <div class="srow">
+      <label>主机 IP</label>
+      <input id="ipInput" class="win-input w-120" type="text" placeholder="192.168.1.100"/>
+      <label>端口</label>
+      <input id="portInput" class="win-input w-70" type="number" placeholder="8085" value="8085"/>
+      <label>刷新(秒)</label>
+      <input id="intervalInput" class="win-input w-56" type="number" value="2" min="1" max="60"/>
+    </div>
+    <div class="srow">
+      <button class="win-btn win-btn-accent" onclick="applySettings()">▶ 连接</button>
+      <button class="win-btn win-btn-subtle" onclick="stopPolling()">⏹ 停止</button>
+      <button class="win-btn win-btn-subtle" onclick="resetView()">↺ 重置</button>
+      <label class="hint">输入 IP 后回车也可连接</label>
+    </div>
+  </div>
+
+  <!-- 外观设置 -->
+  <div class="tab-content" id="tab-appearance">
+    <div class="srow">
+      <label>主题</label>
+      <div class="btn-group">
+        <button class="win-btn win-btn-icon active" id="theme-dark-btn"  onclick="setTheme('dark')">🌙 深色</button>
+        <button class="win-btn win-btn-icon"         id="theme-light-btn" onclick="setTheme('light')">☀️ 浅色</button>
+        <button class="win-btn win-btn-icon"         id="theme-auto-btn"  onclick="setTheme('auto')">🔄 跟随系统</button>
+      </div>
+    </div>
+    <div class="srow">
+      <label>透明度</label>
+      <input class="win-slider" id="opacityInput" type="range" min="40" max="100" value="97"
+             oninput="applyAppearance()"/>
+      <span class="slider-badge" id="opacityLabel">97%</span>
+    </div>
+    <div class="srow">
+      <label>背景模糊</label>
+      <input class="win-slider" id="blurInput" type="range" min="0" max="60" value="32"
+             oninput="applyAppearance()"/>
+      <span class="slider-badge" id="blurLabel">32px</span>
+      <button class="win-btn win-btn-icon" id="blurOffBtn" onclick="setBlurOff()">关闭模糊</button>
+    </div>
+    <div class="srow">
+      <label>背景色</label>
+      <div class="color-row">
+        <div class="color-swatch" id="bgColorSwatch" style="background:transparent"
+             onclick="document.getElementById('bgColorInput').click()">
+          <input type="color" id="bgColorInput" value="#1a1a1a"
+                 onchange="applyAppearance()"/>
+        </div>
+        <input id="bgColorHex" class="win-input w-70" type="text" value="transparent"
+               placeholder="#1a1a1a" oninput="syncBgColor()"/>
+        <button class="win-btn win-btn-icon" onclick="setBgColor('transparent')">透明</button>
+        <button class="win-btn win-btn-icon" onclick="setBgColor('#0d0d0d')">深色</button>
+        <button class="win-btn win-btn-icon" onclick="setBgColor('#1a1a2e')">蓝黑</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 布局设置 -->
+  <div class="tab-content" id="tab-layout">
+    <div class="srow">
+      <label>列数模式</label>
+      <div class="btn-group">
+        <button class="win-btn win-btn-icon" id="col-auto-btn" onclick="setColMode('auto')">⚡ 自动</button>
+        <button class="win-btn win-btn-icon" id="col-1-btn" onclick="setColMode(1)">1列</button>
+        <button class="win-btn win-btn-icon" id="col-2-btn" onclick="setColMode(2)">2列</button>
+        <button class="win-btn win-btn-icon" id="col-3-btn" onclick="setColMode(3)">3列</button>
+        <button class="win-btn win-btn-icon" id="col-4-btn" onclick="setColMode(4)">4列</button>
+      </div>
+      <span class="auto-cols-badge" id="autoColsHint" style="display:none" title="窗口宽度变化时自动调整列数">⚡ 自动</span>
+    </div>
+    <div class="srow">
+      <label>字体大小</label>
+      <input class="win-slider" id="fontSizeInput" type="range" min="9" max="20" value="13"
+             oninput="applyLayout()"/>
+      <span class="slider-badge" id="fontSizeLabel">13px</span>
+      <button class="win-btn win-btn-icon" onclick="setFontSize(11)">小</button>
+      <button class="win-btn win-btn-icon" onclick="setFontSize(13)">中</button>
+      <button class="win-btn win-btn-icon" onclick="setFontSize(16)">大</button>
+    </div>
+    <div class="srow">
+      <label>字体</label>
+      <div class="btn-group">
+        <button class="win-btn win-btn-icon" id="font-segoe-btn"  onclick="setFontFamily('')">系统默认</button>
+        <button class="win-btn win-btn-icon" onclick="setFontFamily('Microsoft YaHei UI')">微软雅黑</button>
+        <button class="win-btn win-btn-icon" onclick="setFontFamily('PingFang SC')">苹方</button>
+      </div>
+    </div>
+    <div class="srow">
+      <label>DPI 缩放</label>
+      <input class="win-slider" id="scaleInput" type="range" min="50" max="150" value="100"
+             oninput="applyLayout()"/>
+      <span class="slider-badge" id="scaleLabel">100%</span>
+      <span class="hint" id="dpiHint"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 内容区 ══ -->
+<div id="scrollBody">
+  <div class="dashboard" id="dashboard">
+    <div class="loading-state">
+      <div class="loading-icon">🖥️</div>
+      <div class="loading-msg">等待连接到 LibreHardwareMonitor</div>
+      <div class="loading-hint">
+        点击标题栏 <span class="key">⚙</span> 展开设置，<br>
+        输入主机 IP 后点击 <b>连接</b>。<br><br>
+        确保在目标主机上已启用<br>
+        <b>选项 → 远程 Web 服务器</b>（端口 8085）
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 状态栏 ══ -->
+<div id="statusbar">
+  <span>LHM Monitor <span id="versionTag">1.0</span></span>
+  <span id="sbUrl"></span>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   双模式（Electron / 浏览器）
+═══════════════════════════════════════════════════ */
+const isElectron = !!window.electronAPI;
+
+async function storageGet(key, def) {
+  if (isElectron) return await window.electronAPI.storeGet(key, def);
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+}
+function storageSet(key, val) {
+  if (isElectron) window.electronAPI.storeSet(key, val);
+  else localStorage.setItem(key, JSON.stringify(val));
+}
+
+/* ════════════════════════════════════════════════════
+   置顶
+═══════════════════════════════════════════════════ */
+let pinned = false;
+function togglePin() {
+  if (isElectron) {
+    window.electronAPI.toggleTop();
+  } else {
+    pinned = !pinned;
+    updatePinUI(pinned);
+  }
+}
+if (isElectron) {
+  window.electronAPI.onTopState(v => { pinned = v; updatePinUI(v); });
+}
+function updatePinUI(v) {
+  const btn = document.getElementById('btnPin');
+  btn.classList.toggle('pinned', v);
+  btn.title = v ? '取消置顶 (T)' : '置顶 (T)';
+  if (v) {
+    btn.classList.remove('pin-anim');
+    void btn.offsetWidth; // reflow
+    btn.classList.add('pin-anim');
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   设置抽屉
+═══════════════════════════════════════════════════ */
+function toggleSettings() {
+  const drawer = document.getElementById('settingsDrawer');
+  drawer.classList.toggle('open');
+}
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+/* ════════════════════════════════════════════════════
+   外观设置
+═══════════════════════════════════════════════════ */
+function setTheme(mode) {
+  document.querySelectorAll('[id^="theme-"]').forEach(b => b.classList.remove('active'));
+  if (mode === 'dark') {
+    document.documentElement.removeAttribute('data-theme');
+    document.getElementById('theme-dark-btn').classList.add('active');
+  } else if (mode === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('theme-light-btn').classList.add('active');
+  } else {
+    // auto: follow system
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('theme-auto-btn').classList.add('active');
+    // Listen for system changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (currentTheme === 'auto') {
+        if (e.matches) document.documentElement.removeAttribute('data-theme');
+        else document.documentElement.setAttribute('data-theme', 'light');
+      }
+    });
+  }
+  currentTheme = mode;
+  storageSet('lhm_theme', mode);
+}
+
+let currentTheme = 'dark';
+
+function setBlurOff() {
+  document.getElementById('blurInput').value = 0;
+  document.getElementById('blurLabel').textContent = '关闭';
+  applyAppearance();
+}
+
+function setBgColor(color) {
+  document.getElementById('bgColorHex').value = color;
+  document.getElementById('bgColorSwatch').style.background =
+    color === 'transparent' ? 'linear-gradient(135deg, #fff 25%, #ddd 25%, #ddd 50%, #fff 50%, #fff 75%, #ddd 75%)' : color;
+  document.getElementById('bgColorInput').value = color.startsWith('#') ? color : '#000000';
+  applyAppearance();
+}
+
+function syncBgColor() {
+  const hex = document.getElementById('bgColorHex').value.trim();
+  const swatch = document.getElementById('bgColorSwatch');
+  swatch.style.background = hex === 'transparent'
+    ? 'linear-gradient(135deg, #fff 25%, #ddd 25%, #ddd 50%, #fff 50%, #fff 75%, #ddd 75%)'
+    : hex;
+  applyAppearance();
+}
+
+function applyAppearance() {
+  const opacity = document.getElementById('opacityInput').value;
+  const blur    = document.getElementById('blurInput').value;
+  const bgHex  = document.getElementById('bgColorHex').value.trim();
+
+  document.getElementById('opacityLabel').textContent = opacity + '%';
+  document.getElementById('blurLabel').textContent = blur === '0' ? '关闭' : blur + 'px';
+
+  document.body.style.opacity = opacity / 100;
+
+  // background blur via backdrop-filter
+  if (blur > 0) {
+    document.body.style.backdropFilter = `blur(${blur}px)`;
+    document.body.style.webkitBackdropFilter = `blur(${blur}px)`;
+    // Mica fallback: use semi-transparent bg
+    const isDark = !document.documentElement.hasAttribute('data-theme');
+    document.body.style.background = bgHex === 'transparent'
+      ? (isDark ? 'rgba(32,32,32,0.85)' : 'rgba(243,243,243,0.80)')
+      : hexToRgba(bgHex, isDark ? 0.85 : 0.80);
+  } else {
+    document.body.style.backdropFilter = 'none';
+    document.body.style.webkitBackdropFilter = 'none';
+    const isDark = !document.documentElement.hasAttribute('data-theme');
+    document.body.style.background = bgHex === 'transparent'
+      ? (isDark ? 'rgba(32,32,32,0.97)' : 'rgba(243,243,243,0.97)')
+      : hexToRgba(bgHex, 0.97);
+  }
+
+  storageSet('lhm_opacity', +opacity);
+  storageSet('lhm_blur', +blur);
+  storageSet('lhm_bgcolor', bgHex);
+}
+
+function hexToRgba(hex, alpha) {
+  if (!hex || hex === 'transparent') return `rgba(0,0,0,${alpha})`;
+  try {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  } catch { return `rgba(0,0,0,${alpha})`; }
+}
+
+/* ════════════════════════════════════════════════════
+   布局设置
+═══════════════════════════════════════════════════ */
+let colMode = 'auto'; // 'auto' | 1 | 2 | 3 | 4
+
+function setColMode(mode) {
+  colMode = mode;
+  document.querySelectorAll('[id^="col-"]').forEach(b => b.classList.remove('active'));
+  const autoHint = document.getElementById('autoColsHint');
+  if (mode === 'auto') {
+    document.getElementById('col-auto-btn').classList.add('active');
+    autoHint.style.display = '';
+  } else {
+    document.getElementById('col-' + mode + '-btn').classList.add('active');
+    autoHint.style.display = 'none';
+    document.getElementById('dashboard').style.setProperty('--cols', mode);
+  }
+  storageSet('lhm_colmode', mode);
+  computeAutoCols();
+}
+
+function setFontSize(size) {
+  document.getElementById('fontSizeInput').value = size;
+  applyLayout();
+}
+
+function setFontFamily(font) {
+  document.querySelectorAll('[id^="font-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('font-segoe-btn').classList.add('active');
+  const root = document.documentElement;
+  if (!font) {
+    root.style.removeProperty('--font-family');
+  } else {
+    root.style.setProperty('--font-family', `'${font}', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif`);
+  }
+  document.getElementById('font-segoe-btn').classList.add('active');
+  storageSet('lhm_fontfamily', font || '');
+}
+
+function applyLayout() {
+  const fontSize = document.getElementById('fontSizeInput').value;
+  const scale    = document.getElementById('scaleInput').value;
+  document.getElementById('fontSizeLabel').textContent = fontSize + 'px';
+  document.getElementById('scaleLabel').textContent    = scale + '%';
+  document.documentElement.style.setProperty('--base-font', fontSize + 'px');
+  document.documentElement.style.setProperty('--scale-factor', scale / 100);
+  storageSet('lhm_fontsize', +fontSize);
+  storageSet('lhm_scale', +scale);
+  computeAutoCols();
+}
+
+/* ════════════════════════════════════════════════════
+   响应式列数
+═══════════════════════════════════════════════════ */
+function computeAutoCols() {
+  if (colMode !== 'auto') return;
+  const bodyW = document.body.clientWidth;
+  const pad   = 16; // 标题栏+状态栏高度估算
+  const availW = bodyW - pad;
+  const cardMinW = 200 * (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale-factor')) || 1);
+  const cols = Math.max(1, Math.min(4, Math.floor(availW / cardMinW)));
+  document.getElementById('dashboard').style.setProperty('--cols', cols);
+  const hint = document.getElementById('autoColsHint');
+  if (hint) hint.title = `当前宽度 ${bodyW}px → ${cols} 列`;
+}
+
+const ro = new ResizeObserver(() => computeAutoCols());
+ro.observe(document.body);
+
+/* ════════════════════════════════════════════════════
+   连接管理
+═══════════════════════════════════════════════════ */
+let polling = null, baseUrl = '', retryCount = 0;
+
+async function loadSettings() {
+  const s = await storageGet('lhm_settings', {});
+  if (s.ip)       document.getElementById('ipInput').value       = s.ip;
+  if (s.port)     document.getElementById('portInput').value     = s.port;
+  if (s.interval) document.getElementById('intervalInput').value = s.interval;
+  if (s.ip) setTimeout(applySettings, 500);
+}
+
+function saveSettings() {
+  storageSet('lhm_settings', {
+    ip:       document.getElementById('ipInput').value.trim(),
+    port:     document.getElementById('portInput').value.trim(),
+    interval: document.getElementById('intervalInput').value.trim(),
+  });
+}
+
+function applySettings() {
+  const ip       = document.getElementById('ipInput').value.trim();
+  const port     = parseInt(document.getElementById('portInput').value) || 8085;
+  const interval = Math.max(1, parseInt(document.getElementById('intervalInput').value) || 2);
+  if (!ip) { showError('请输入主机 IP 地址'); return; }
+  baseUrl = `http://${ip}:${port}`;
+  document.getElementById('sbUrl').textContent = baseUrl + '/data.json';
+  saveSettings();
+  stopPolling();
+  retryCount = 0;
+  setStatus('connecting');
+  fetchData();
+  polling = setInterval(fetchData, interval * 1000);
+  document.getElementById('settingsDrawer').classList.remove('open');
+}
+
+function stopPolling() {
+  if (polling) { clearInterval(polling); polling = null; }
+  setStatus('offline');
+}
+
+function resetView() {
+  stopPolling();
+  document.getElementById('dashboard').innerHTML = `
+    <div class="loading-state">
+      <div class="loading-icon">🖥️</div>
+      <div class="loading-msg">等待连接</div>
+      <div class="loading-hint">请展开设置输入主机 IP</div>
+    </div>`;
+  document.getElementById('tbPcname').style.display = 'none';
+  document.getElementById('tbUpdate').textContent   = '';
+  document.getElementById('sbUrl').textContent      = '';
+}
+
+/* ════════════════════════════════════════════════════
+   数据获取
+═══════════════════════════════════════════════════ */
+async function fetchData() {
+  try {
+    const r = await fetch(`${baseUrl}/data.json`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    retryCount = 0;
+    setStatus('online');
+    renderDashboard(data);
+    document.getElementById('tbUpdate').textContent =
+      new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  } catch (e) {
+    retryCount++;
+    setStatus('error');
+    if (retryCount === 1)
+      showError(`无法连接 <b>${baseUrl}/data.json</b><br>
+        1. IP 和端口是否正确？<br>
+        2. LHM 远程 Web 服务器是否已启用？<br>
+        3. 防火墙是否放行该端口？<br>
+        <span style="color:var(--text-tertiary)">错误：${e.message}</span>`);
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   状态
+═══════════════════════════════════════════════════ */
+function setStatus(state) {
+  const dot = document.getElementById('tbStatusDot');
+  const txt = document.getElementById('tbStatusText');
+  dot.className = 'status-dot';
+  const map = {
+    connecting: ['', '连接中…'],
+    online:     ['online', '在线'],
+    offline:    ['', '已断开'],
+    error:      ['error', '失败'],
+  };
+  const [cls, label] = map[state] || ['', state];
+  if (cls) dot.classList.add(cls);
+  txt.textContent = label;
+}
+function showError(msg) {
+  document.getElementById('dashboard').innerHTML = `<div class="error-card">⚠ ${msg}</div>`;
+}
+
+/* ════════════════════════════════════════════════════
+   LHM 数据解析
+═══════════════════════════════════════════════════ */
+function collectDevices(root) {
+  const top = root.Children || [];
+  const computer = top[0] || root;
+  return { pcName: computer.Text || 'Unknown', devices: computer.Children || top };
+}
+function parseValue(str) {
+  if (!str || str === '-') return { num: null, unit: '' };
+  const m = str.match(/^([0-9.\-]+)\s*(.*)$/);
+  return m ? { num: parseFloat(m[1]), unit: m[2].trim() } : { num: null, unit: str };
+}
+
+// 颜色
+function tempColor(v) {
+  return v < 50 ? 'var(--success)' : v < 70 ? '#FCE100' : v < 85 ? 'var(--caution)' : 'var(--error)';
+}
+function loadColor(v) {
+  return v < 50 ? 'var(--success)' : v < 75 ? '#FCE100' : v < 90 ? 'var(--caution)' : 'var(--error)';
+}
+function deviceColor(n) {
+  const t = n.toLowerCase();
+  if (t.includes('cpu')||t.includes('ryzen')||t.includes('intel')||t.includes('processor')) return '#0091F8';
+  if (t.includes('gpu')||t.includes('geforce')||t.includes('radeon')||t.includes('rtx')) return '#9A6BFF';
+  if (t.includes('ram')||t.includes('memory')) return '#6CCB5F';
+  if (t.includes('disk')||t.includes('ssd')||t.includes('nvme')||t.includes('hdd')) return '#F7630C';
+  return 'var(--accent-light)';
+}
+function deviceIcon(n) {
+  const t = n.toLowerCase();
+  if (t.includes('cpu')||t.includes('ryzen')||t.includes('intel')||t.includes('core')) return '🔲';
+  if (t.includes('gpu')||t.includes('geforce')||t.includes('radeon')||t.includes('rtx')) return '🎮';
+  if (t.includes('ram')||t.includes('memory')) return '📦';
+  if (t.includes('disk')||t.includes('ssd')||t.includes('nvme')||t.includes('hdd')) return '💾';
+  if (t.includes('board')||t.includes('lpc')||t.includes('ec')) return '🔧';
+  if (t.includes('battery')) return '🔋';
+  if (t.includes('network')||t.includes('ethernet')) return '🌐';
+  return '📊';
+}
+
+// UI 组件
+function barHtml(pct, color, h = 3) {
+  return `<div class="bar-wrap" style="height:${h}px">
+    <div class="bar-fill" style="width:${Math.min(100,Math.max(0,pct))}%;background:${color}"></div>
+  </div>`;
+}
+function gaugeHtml(pct, color, valStr, unit = '') {
+  const size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gauge-size')) || 50;
+  const r = (size / 2) - 5;
+  const c = 2 * Math.PI * r;
+  const offset = c - (Math.min(100, Math.max(0, pct)) / 100) * c;
+  const cx = size / 2;
+  return `<div class="gauge-wrap" style="width:${size}px;height:${size}px">
+    <svg class="gauge-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle class="gauge-track" cx="${cx}" cy="${cx}" r="${r}"/>
+      <circle class="gauge-fill" cx="${cx}" cy="${cx}" r="${r}"
+        stroke="${color}" stroke-dasharray="${c}" stroke-dashoffset="${offset}"/>
+    </svg>
+    <div class="gauge-center">${valStr}<small>${unit}</small></div>
+  </div>`;
+}
+
+// 卡片
+function buildCard(device, color) {
+  const name = device.Text || 'Device';
+  const groups = {};
+  function collect(node) {
+    if (!node.Children?.length) { (groups[node._g||'Other'] = groups[node._g||'Other']||[]).push(node); }
+    else for (const c of node.Children) { c._g = node.Text; collect(c); }
+  }
+  for (const c of device.Children||[]) collect(c);
+
+  const loads  = groups['Load']        || groups['负载']    || [];
+  const temps  = groups['Temperature'] || groups['Temperatures'] || groups['温度'] || [];
+  const powers = groups['Power']       || groups['功耗']    || [];
+  const clocks = groups['Clock']       || groups['频率']    || [];
+  const fans   = groups['Fan']         || groups['风扇']    || groups['Fans'] || [];
+  const mems   = groups['Data']        || groups['Memory']  || groups['内存'] || [];
+  const volts  = groups['Voltage']     || groups['电压']    || [];
+  const others = Object.entries(groups)
+    .filter(([k])=>!['Load','负载','Temperature','Temperatures','温度','Power','功耗',
+                      'Voltage','电压','Fan','风扇','Fans','Clock','频率','Data','Memory','内存'].includes(k))
+    .flatMap(([,v])=>v);
+
+  const mainLoad  = loads.find(s=>/total|package|tctl/i.test(s.Text))||loads[0];
+  const mainTemp  = temps.find(s=>/package|tctl|die|hotspot/i.test(s.Text))||temps[0];
+  const mainPower = powers.find(s=>/package|total/i.test(s.Text))||powers[0];
+
+  let h = `<div class="card">
+    <div class="card-header">
+      <span class="card-icon">${deviceIcon(name)}</span>
+      <span class="card-title" style="color:${color}">${name}</span>
+    </div>`;
+
+  if (mainLoad && mainTemp) {
+    const lv = parseValue(mainLoad.Value), tv = parseValue(mainTemp.Value);
+    h += `<div class="gauge-row">
+      ${gaugeHtml(lv.num||0, loadColor(lv.num||0), (lv.num||0).toFixed(0), '%')}
+      <div class="gauge-info">
+        <div class="gauge-name">${name.split(' ').slice(0,3).join(' ')}</div>
+        <div class="gauge-sub">
+          🌡 <b style="color:${tempColor(tv.num||0)}">${tv.num!=null?tv.num.toFixed(1):'--'} ${tv.unit}</b><br>
+          ${mainPower?`⚡ <b style="color:#FCE100">${parseValue(mainPower.Value).num?.toFixed(1)||'--'} ${parseValue(mainPower.Value).unit}</b>`:''}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if (temps.length) {
+    h += `<div class="sensor-rows">`;
+    for (const s of temps) {
+      const v = parseValue(s.Value); if (v.num===null) continue;
+      const c = tempColor(v.num);
+      h += `<div class="sensor-row">
+        <span class="sensor-name">🌡 ${s.Text}</span>
+        <div>${barHtml((v.num/110)*100, c)}</div>
+        <span class="sensor-val" style="color:${c}">${v.num.toFixed(1)}</span>
+        <span class="sensor-unit">${v.unit}</span>
+      </div>`;
+    }
+    h += `</div>`;
+  }
+
+  if (loads.length) {
+    h += `<div class="sensor-rows">`;
+    for (const s of loads) {
+      const v = parseValue(s.Value); if (v.num===null) continue;
+      const c = loadColor(v.num);
+      h += `<div class="sensor-row">
+        <span class="sensor-name">📊 ${s.Text}</span>
+        <div>${barHtml(v.num, c)}</div>
+        <span class="sensor-val" style="color:${c}">${v.num.toFixed(1)}</span>
+        <span class="sensor-unit">${v.unit}</span>
+      </div>`;
+    }
+    h += `</div>`;
+  }
+
+  const list = [...clocks, ...powers, ...mems, ...volts, ...fans, ...others];
+  if (list.length) {
+    h += `<div style="margin-top:4px">`;
+    for (const s of list) {
+      const v = parseValue(s.Value);
+      const d = v.num!=null ? v.num.toFixed(v.unit?.includes('MHz')||v.unit?.includes('GHz')?0:2) : s.Value;
+      if (!d) continue;
+      h += `<div class="sensor-row-full">
+        <span class="srf-name">${s.Text}</span>
+        <span class="srf-val">${d}</span>
+        <span class="srf-unit">${v.unit}</span>
+        <span class="srf-minmax">
+          ${s.Min&&s.Min!==s.Value?'↓'+(parseValue(s.Min).num?.toFixed(0)||s.Min):''}
+          ${s.Max&&s.Max!==s.Value?' ↑'+(parseValue(s.Max).num?.toFixed(0)||s.Max):''}
+        </span>
+      </div>`;
+    }
+    h += `</div>`;
+  }
+  h += `</div>`;
+  return h;
+}
+
+function renderDashboard(data) {
+  const { pcName, devices } = collectDevices(data);
+  const nameEl = document.getElementById('tbPcname');
+  nameEl.textContent = pcName; nameEl.style.display = '';
+  document.getElementById('tbTitle').textContent = `LHM · ${pcName}`;
+  if (!devices?.length) {
+    document.getElementById('dashboard').innerHTML =
+      `<div class="loading-state"><div class="loading-msg">未检测到硬件设备</div></div>`;
+    return;
+  }
+  document.getElementById('dashboard').innerHTML =
+    devices.map(d => buildCard(d, deviceColor(d.Text||''))).join('');
+  // Re-compute auto cols after render
+  computeAutoCols();
+}
+
+/* ════════════════════════════════════════════════════
+   键盘快捷键
+═══════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key === 's' || e.key === 'S') toggleSettings();
+  if (e.key === 't' || e.key === 'T') togglePin();
+  // Enter in IP field = connect
+  if (e.key === 'Enter' && document.activeElement.id === 'ipInput') applySettings();
+});
+
+/* ════════════════════════════════════════════════════
+   初始化
+═══════════════════════════════════════════════════ */
+(async () => {
+  // DPI 检测
+  const dpi = Math.round((window.devicePixelRatio || 1) * 100);
+  document.getElementById('dpiHint').textContent = `系统 DPI: ${dpi}%`;
+
+  // 加载外观设置
+  const opacity   = await storageGet('lhm_opacity', 97);
+  const blur      = await storageGet('lhm_blur', 32);
+  const bgcolor   = await storageGet('lhm_bgcolor', 'transparent');
+  const theme     = await storageGet('lhm_theme', 'dark');
+  const fontSize  = await storageGet('lhm_fontsize', 13);
+  const scale     = await storageGet('lhm_scale', 100);
+  const colmode   = await storageGet('lhm_colmode', 'auto');
+  const fontfam   = await storageGet('lhm_fontfamily', '');
+
+  document.getElementById('opacityInput').value = opacity;
+  document.getElementById('blurInput').value = blur;
+  document.getElementById('fontSizeInput').value = fontSize;
+  document.getElementById('scaleInput').value = scale;
+  document.getElementById('scaleLabel').textContent = scale + '%';
+
+  setBgColor(bgcolor);
+  setTheme(theme);
+  setColMode(colmode);
+  if (fontfam) setFontFamily(fontfam);
+  applyAppearance();
+  applyLayout();
+
+  // 加载连接设置
+  await loadSettings();
+})();
+</script>
+</body>
+</html>
