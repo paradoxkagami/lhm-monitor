@@ -99,7 +99,7 @@ function createWindow() {
     minWidth: 300,
     minHeight: 200,
     frame: false,
-    transparent: true,
+    transparent: false,
     hasShadow: true,
     resizable: true,
     alwaysOnTop: false,
@@ -111,11 +111,11 @@ function createWindow() {
       webSecurity: false,
     },
     icon: path.join(__dirname, 'assets', 'icon.ico'),
-    backgroundMaterial: 'mica',
+    backgroundMaterial: 'none',
   });
 
   try {
-    mainWindow.setBackgroundMaterial('mica');
+    mainWindow.setBackgroundMaterial('none');
   } catch (_) {}
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));

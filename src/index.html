@@ -23,12 +23,12 @@
   --accent-dark:   #005A9E;
   --accent-subtle: rgba(0,120,212,0.12);
 
-  /* Mica 表面色 */
-  --surf-base:     rgba(32,32,32,0.85);
-  --surf-layer1:   rgba(44,44,44,0.80);
-  --surf-layer2:   rgba(58,58,58,0.75);
-  --surf-layer3:   rgba(72,72,72,0.70);
-  --surf-blur:     32px;
+  /* 表面色（去除模糊效果以降低CPU） */
+  --surf-base:     rgb(32,32,32);
+  --surf-layer1:   rgb(44,44,44);
+  --surf-layer2:   rgb(58,58,58);
+  --surf-layer3:   rgb(72,72,72);
+  --surf-blur:     0px;
 
   /* 边框 */
   --border-subtle: rgba(255,255,255,0.09);
@@ -54,8 +54,6 @@
   /* 字体缩放 */
   --base-font:   13px;
   --scale-factor: 1;
-  --win-opacity: 0.97;
-  --bg-blur: 32px;
   --bg-color: transparent;
 
   /* 响应式尺寸 */
@@ -67,17 +65,17 @@
 
 /* ── CSS 变量：浅色主题 ── */
 [data-theme="light"] {
-  --surf-base:     rgba(243,243,243,0.80);
-  --surf-layer1:   rgba(255,255,255,0.75);
-  --surf-layer2:   rgba(255,255,255,0.65);
-  --surf-layer3:   rgba(255,255,255,0.55);
+  --surf-base:     rgb(243,243,243);
+  --surf-layer1:   rgb(255,255,255);
+  --surf-layer2:   rgb(250,250,250);
+  --surf-layer3:   rgb(240,240,240);
   --border-subtle: rgba(0,0,0,0.07);
   --border-strong: rgba(0,0,0,0.12);
   --text-primary:   rgba(0,0,0,0.90);
   --text-secondary: rgba(0,0,0,0.60);
   --text-tertiary:  rgba(0,0,0,0.35);
   --text-disabled:  rgba(0,0,0,0.24);
-  --surf-blur:     20px;
+  --surf-blur:     0px;
   --accent:        #0078D4;
   --accent-light:  #0091F8;
   --accent-subtle: rgba(0,120,212,0.10);
@@ -100,12 +98,10 @@ body {
   height: 100vh;
   border-radius: var(--r-win);
   overflow: hidden;
-  background: var(--bg-color);
-  opacity: var(--win-opacity);
+  background: var(--surf-base);
   box-shadow:
     0 8px 32px rgba(0,0,0,0.50),
-    0 2px 8px  rgba(0,0,0,0.30),
-    inset 0 1px 0 rgba(255,255,255,0.08);
+    0 2px 8px  rgba(0,0,0,0.30);
   outline: 1px solid var(--border-subtle);
 }
 
@@ -540,34 +536,6 @@ input[type="color"] { opacity: 0; position: absolute; width: 0; height: 0; }
         <button class="win-btn win-btn-icon"         id="theme-auto-btn"  onclick="setTheme('auto')">🔄 跟随系统</button>
       </div>
     </div>
-    <div class="srow">
-      <label>透明度</label>
-      <input class="win-slider" id="opacityInput" type="range" min="40" max="100" value="97"
-             oninput="applyAppearance()" onchange="applyAppearance()"/>
-      <span class="slider-badge" id="opacityLabel">97%</span>
-    </div>
-    <div class="srow">
-      <label>背景模糊</label>
-      <input class="win-slider" id="blurInput" type="range" min="0" max="60" value="32"
-             oninput="applyAppearance()" onchange="applyAppearance()"/>
-      <span class="slider-badge" id="blurLabel">32px</span>
-      <button class="win-btn win-btn-icon" id="blurOffBtn" onclick="setBlurOff()">关闭模糊</button>
-    </div>
-    <div class="srow">
-      <label>背景色</label>
-      <div class="color-row">
-        <div class="color-swatch" id="bgColorSwatch" style="background:transparent"
-             onclick="document.getElementById('bgColorInput').click()">
-          <input type="color" id="bgColorInput" value="#1a1a1a"
-                 onchange="applyAppearance()"/>
-        </div>
-        <input id="bgColorHex" class="win-input w-70" type="text" value="transparent"
-               placeholder="#1a1a1a" oninput="syncBgColor()"/>
-        <button class="win-btn win-btn-icon" onclick="setBgColor('transparent')">透明</button>
-        <button class="win-btn win-btn-icon" onclick="setBgColor('#0d0d0d')">深色</button>
-        <button class="win-btn win-btn-icon" onclick="setBgColor('#1a1a2e')">蓝黑</button>
-      </div>
-    </div>
   </div>
 
   <!-- 布局设置 -->
@@ -724,57 +692,9 @@ function setTheme(mode) {
 
 let currentTheme = 'dark';
 
-function setBlurOff() {
-  document.getElementById('blurInput').value = 0;
-  document.getElementById('blurLabel').textContent = '关闭';
-  applyAppearance();
-}
-
-function setBgColor(color) {
-  document.getElementById('bgColorHex').value = color;
-  document.getElementById('bgColorSwatch').style.background =
-    color === 'transparent' ? 'linear-gradient(135deg, #fff 25%, #ddd 25%, #ddd 50%, #fff 50%, #fff 75%, #ddd 75%)' : color;
-  document.getElementById('bgColorInput').value = color.startsWith('#') ? color : '#000000';
-  applyAppearance();
-}
-
-function syncBgColor() {
-  const hex = document.getElementById('bgColorHex').value.trim();
-  const swatch = document.getElementById('bgColorSwatch');
-  swatch.style.background = hex === 'transparent'
-    ? 'linear-gradient(135deg, #fff 25%, #ddd 25%, #ddd 50%, #fff 50%, #fff 75%, #ddd 75%)'
-    : hex;
-  applyAppearance();
-}
-
 function applyAppearance() {
-  const opacity = document.getElementById('opacityInput').value;
-  const blur    = document.getElementById('blurInput').value;
-  const bgHex   = document.getElementById('bgColorHex').value.trim();
-
-  document.getElementById('opacityLabel').textContent = opacity + '%';
-  document.getElementById('blurLabel').textContent = blur === '0' ? '关闭' : blur + 'px';
-
-  document.body.style.opacity = opacity / 100;
-
-  const isDark = !document.documentElement.hasAttribute('data-theme');
-
-  if (blur > 0) {
-    document.body.style.backdropFilter = `blur(${blur}px)`;
-    document.body.style.webkitBackdropFilter = `blur(${blur}px)`;
-    document.body.style.background = bgHex === 'transparent'
-      ? (isDark ? 'rgba(32,32,32,0.85)' : 'rgba(243,243,243,0.80)')
-      : hexToRgba(bgHex, isDark ? 0.85 : 0.80);
-  } else {
-    document.body.style.backdropFilter = 'none';
-    document.body.style.webkitBackdropFilter = 'none';
-    document.body.style.background = bgHex === 'transparent'
-      ? (isDark ? 'rgba(32,32,32,0.97)' : 'rgba(243,243,243,0.97)')
-      : hexToRgba(bgHex, 0.97);
-  }
-
-  storageSet('lhm_opacity', +opacity);
-  storageSet('lhm_blur', +blur);
+  const bgHex = document.getElementById('bgColorHex').value.trim();
+  document.body.style.background = bgHex === 'transparent' ? 'var(--surf-base)' : hexToRgba(bgHex, 1);
   storageSet('lhm_bgcolor', bgHex);
 }
 
@@ -1180,32 +1100,25 @@ document.addEventListener('keydown', e => {
   document.getElementById('dpiHint').textContent = `系统 DPI: ${dpi}%`;
 
   // 读取所有设置
-  const opacity   = await storageGet('lhm_opacity', 97);
-  const blur      = await storageGet('lhm_blur', 32);
-  const bgcolor   = await storageGet('lhm_bgcolor', 'transparent');
   const theme     = await storageGet('lhm_theme', 'dark');
   const fontSize  = await storageGet('lhm_fontsize', 13);
   const scale     = await storageGet('lhm_scale', 100);
   const colmode   = await storageGet('lhm_colmode', 'auto');
   const fontfam   = await storageGet('lhm_fontfamily', '');
 
-  // 先应用字体（立即生效，防止页面刷新后字体大小跳变）
+  // 应用字体设置
   document.documentElement.style.setProperty('--base-font', fontSize + 'px');
   document.documentElement.style.setProperty('--scale-factor', scale / 100);
 
   // 同步滑块 UI
-  document.getElementById('opacityInput').value = opacity;
-  document.getElementById('blurInput').value = blur;
   document.getElementById('fontSizeInput').value = fontSize;
   document.getElementById('scaleInput').value = scale;
   document.getElementById('fontSizeLabel').textContent = fontSize + 'px';
   document.getElementById('scaleLabel').textContent = scale + '%';
 
-  setBgColor(bgcolor);
   setTheme(theme);
   setColMode(colmode);
   if (fontfam) setFontFamily(fontfam);
-  applyAppearance();
 
   // 加载连接设置
   await loadSettings();
