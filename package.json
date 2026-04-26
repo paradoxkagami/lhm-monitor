@@ -1,6 +1,6 @@
 {
   "name": "lhm-monitor",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "LibreHardwareMonitor 局域网桌面监控小工具",
   "main": "main.js",
   "author": "paradoxkagami",
@@ -17,6 +17,7 @@
     "electron-store": "^8.1.0"
   },
   "devDependencies": {
+    "asar": "^3.2.0",
     "electron": "^29.4.6",
     "electron-builder": "^24.13.3"
   },
@@ -31,11 +32,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico"
@@ -43,7 +48,10 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerLanguages": ["zh_CN", "en_US"],
+      "installerLanguages": [
+        "zh_CN",
+        "en_US"
+      ],
       "language": "2052",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,

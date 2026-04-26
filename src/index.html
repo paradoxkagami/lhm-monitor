@@ -865,6 +865,7 @@ ro.observe(document.body);
    连接管理
 ═══════════════════════════════════════════════════ */
 let polling = null, baseUrl = '', retryCount = 0;
+let currentInterval = 2000; // 当前轮询间隔（毫秒）
 
 async function loadSettings() {
   const s = await storageGet('lhm_settings', {});
@@ -885,16 +886,17 @@ function saveSettings() {
 function applySettings() {
   const ip       = document.getElementById('ipInput').value.trim();
   const port     = parseInt(document.getElementById('portInput').value) || 8085;
-  const interval = Math.max(1, parseInt(document.getElementById('intervalInput').value) || 2);
+  const interval = Math.max(3, parseInt(document.getElementById('intervalInput').value) || 3);
   if (!ip) { showError('请输入主机 IP 地址'); return; }
   baseUrl = `http://${ip}:${port}`;
   document.getElementById('sbUrl').textContent = baseUrl + '/data.json';
   saveSettings();
   stopPolling();
   retryCount = 0;
+  currentInterval = interval * 1000;
   setStatus('connecting');
   fetchData();
-  polling = setInterval(fetchData, interval * 1000);
+  polling = setInterval(fetchData, currentInterval);
   document.getElementById('settingsDrawer').classList.remove('open');
 }
 
@@ -921,7 +923,11 @@ function resetView() {
 ═══════════════════════════════════════════════════ */
 async function fetchData() {
   try {
-    const r = await fetch(`${baseUrl}/data.json`, { cache: 'no-store' });
+    // 5秒超时，防止连接不上时请求堆积
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 5000);
+    const r = await fetch(`${baseUrl}/data.json`, { cache: 'no-store', signal: ac.signal });
+    clearTimeout(to);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     retryCount = 0;
@@ -929,15 +935,33 @@ async function fetchData() {
     renderDashboard(data);
     document.getElementById('tbUpdate').textContent =
       new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+    // 连接成功后如轮询间隔因失败而增大，恢复为正常间隔并重启轮询
+    if (polling && currentInterval > (parseInt(document.getElementById('intervalInput').value) || 3) * 1000) {
+      stopPolling();
+      currentInterval = (parseInt(document.getElementById('intervalInput').value) || 3) * 1000;
+      polling = setInterval(fetchData, currentInterval);
+    }
   } catch (e) {
+    const isTimeout = e.name === 'AbortError';
     retryCount++;
+
+    // 失败后指数退避：每次 ×2，最高到 60 秒
+    const base = Math.max(3, parseInt(document.getElementById('intervalInput').value) || 3) * 1000;
+    const newInterval = Math.min(base * Math.pow(2, Math.min(retryCount - 1, 5)), 60000);
+    if (newInterval !== currentInterval) {
+      currentInterval = newInterval;
+      stopPolling();
+      polling = setInterval(fetchData, currentInterval);
+    }
+
     setStatus('error');
     if (retryCount === 1)
       showError(`无法连接 <b>${baseUrl}/data.json</b><br>
         1. IP 和端口是否正确？<br>
         2. LHM 远程 Web 服务器是否已启用？<br>
         3. 防火墙是否放行该端口？<br>
-        <span style="color:var(--text-tertiary)">错误：${e.message}</span>`);
+        <span style="color:var(--text-tertiary)">${isTimeout ? '连接超时(5s)，将逐渐降低重试频率' : '错误：' + e.message}</span>`);
   }
 }
 

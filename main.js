@@ -186,15 +186,21 @@ if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      if (!mainWindow.isVisible()) mainWindow.show();
-      mainWindow.focus();
-    }
+    // 窗口未创建时先等待，创建完立即聚焦
+    const waitForWindow = () => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        if (!mainWindow.isVisible()) mainWindow.show();
+        mainWindow.focus();
+      } else {
+        setTimeout(waitForWindow, 50);
+      }
+    };
+    waitForWindow();
   });
 }
 // ───────────────────────────────────────────────
 
 app.whenReady().then(() => {
-  setTimeout(createWindow, 100);
+  createWindow(); // 去掉 setTimeout 延迟，消除竞态
 });
