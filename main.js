@@ -180,6 +180,21 @@ app.on('window-all-closed', () => {
   // Windows 下不quit，留给托盘
 });
 
+// ── 单实例锁：只允许运行一个窗口 ─────────────
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+// ───────────────────────────────────────────────
+
 app.whenReady().then(() => {
   setTimeout(createWindow, 100);
 });
