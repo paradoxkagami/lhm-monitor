@@ -685,21 +685,22 @@ function setTheme(mode) {
     if (prefersDark) document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', 'light');
     document.getElementById('theme-auto-btn').classList.add('active');
-    themeChangeHandler = (e) => {
+    // 移除旧的监听器，避免累积
+    if (themeChangeHandler) window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', themeChangeHandler);
+    themeChangeHandler = e => {
       if (currentTheme === 'auto') {
         if (e.matches) document.documentElement.removeAttribute('data-theme');
         else document.documentElement.setAttribute('data-theme', 'light');
       }
     };
-    themeMediaQuery.addEventListener('change', themeChangeHandler);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeChangeHandler);
   }
   currentTheme = mode;
   storageSet('lhm_theme', mode);
 }
 
 let currentTheme = 'dark';
-let themeMediaQuery = null;
-let themeChangeHandler = null;
+let themeChangeHandler = null;  // 保存主题监听器引用，避免累积
 
 function applyAppearance() {
   const bgHex = document.getElementById('bgColorHex').value.trim();
@@ -838,12 +839,11 @@ function applySettings() {
   currentInterval = interval * 1000;
   fetchInFlight = false;
   setStatus('connecting');
-  scheduleNextFetch(0);
+  fetchAndSchedule();  // 串行调度：上一轮结束后再安排下一轮
   document.getElementById('settingsDrawer').classList.remove('open');
 }
 
 function stopPolling() {
-  pollingEnabled = false;
   if (polling) { clearTimeout(polling); polling = null; }
   setStatus('offline');
 }
@@ -862,12 +862,15 @@ function resetView() {
 }
 
 /* ════════════════════════════════════════════════════
-   数据获取
+   数据获取（串行轮询，避免请求堆积）
 ═══════════════════════════════════════════════════ */
-async function fetchData() {
+let fetchInFlight = false;
+
+async function fetchAndSchedule() {
+  // 如果上一轮还没结束，跳过这次调度（fetchInFlight 保护）
   if (fetchInFlight) return;
   fetchInFlight = true;
-  let to = null;
+
   try {
     // 5秒超时，防止连接不上时请求堆积
     const ac = new AbortController();
@@ -881,8 +884,8 @@ async function fetchData() {
     document.getElementById('tbUpdate').textContent =
       new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
 
-    // 连接成功后如轮询间隔因失败而增大，恢复为正常间隔并重启轮询
-    if (polling && currentInterval > (parseInt(document.getElementById('intervalInput').value) || 3) * 1000) {
+    // 连接成功后如轮询间隔因失败而增大，恢复为正常间隔
+    if (currentInterval > (parseInt(document.getElementById('intervalInput').value) || 3) * 1000) {
       currentInterval = (parseInt(document.getElementById('intervalInput').value) || 3) * 1000;
     }
   } catch (e) {
@@ -891,10 +894,7 @@ async function fetchData() {
 
     // 失败后指数退避：每次 ×2，最高到 60 秒
     const base = Math.max(3, parseInt(document.getElementById('intervalInput').value) || 3) * 1000;
-    const newInterval = Math.min(base * Math.pow(2, Math.min(retryCount - 1, 5)), 60000);
-    if (newInterval !== currentInterval) {
-      currentInterval = newInterval;
-    }
+    currentInterval = Math.min(base * Math.pow(2, Math.min(retryCount - 1, 5)), 60000);
 
     setStatus('error');
     if (retryCount === 1)
@@ -904,8 +904,9 @@ async function fetchData() {
         3. 防火墙是否放行该端口？<br>
         <span style="color:var(--text-tertiary)">${isTimeout ? '连接超时(5s)，将逐渐降低重试频率' : '错误：' + e.message}</span>`);
   } finally {
-    if (to) clearTimeout(to);
     fetchInFlight = false;
+    // 串行调度：上一轮结束后再安排下一轮
+    if (polling) polling = setTimeout(fetchAndSchedule, currentInterval);
   }
 }
 
@@ -975,7 +976,8 @@ function barHtml(pct, color, h = 3) {
     <div class="bar-fill" style="width:${Math.min(100,Math.max(0,pct))}%;background:${color}"></div>
   </div>`;
 }
-function gaugeHtml(pct, color, valStr, unit = '', size = 50) {
+function gaugeHtml(pct, color, valStr, unit = '', gaugeSize) {
+  const size = gaugeSize || 50;
   const r = (size / 2) - 5;
   const c = 2 * Math.PI * r;
   const offset = c - (Math.min(100, Math.max(0, pct)) / 100) * c;
@@ -1098,7 +1100,9 @@ function renderDashboard(data) {
       `<div class="loading-state"><div class="loading-msg">未检测到硬件设备</div></div>`;
     return;
   }
-  const gaugeSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gauge-size')) || 50;
+  // 每次渲染只读一次 getComputedStyle，减少样式计算频率
+  const rootStyle = getComputedStyle(document.documentElement);
+  const gaugeSize = parseFloat(rootStyle.getPropertyValue('--gauge-size').trim()) || 50;
   document.getElementById('dashboard').innerHTML =
     devices.map(d => buildCard(d, deviceColor(d.Text||''), gaugeSize)).join('');
   computeAutoCols();
