@@ -668,6 +668,11 @@ function switchTab(name, btn) {
 ═══════════════════════════════════════════════════ */
 function setTheme(mode) {
   document.querySelectorAll('[id^="theme-"]').forEach(b => b.classList.remove('active'));
+  if (themeMediaQuery && themeChangeHandler) {
+    themeMediaQuery.removeEventListener('change', themeChangeHandler);
+    themeMediaQuery = null;
+    themeChangeHandler = null;
+  }
   if (mode === 'dark') {
     document.documentElement.removeAttribute('data-theme');
     document.getElementById('theme-dark-btn').classList.add('active');
@@ -675,7 +680,8 @@ function setTheme(mode) {
     document.documentElement.setAttribute('data-theme', 'light');
     document.getElementById('theme-light-btn').classList.add('active');
   } else {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const prefersDark = themeMediaQuery.matches;
     if (prefersDark) document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', 'light');
     document.getElementById('theme-auto-btn').classList.add('active');
@@ -789,7 +795,19 @@ ro.observe(document.body);
    连接管理
 ═══════════════════════════════════════════════════ */
 let polling = null, baseUrl = '', retryCount = 0;
+let fetchInFlight = false;
+let pollingEnabled = false;
 let currentInterval = 2000; // 当前轮询间隔（毫秒）
+
+function scheduleNextFetch(delay = currentInterval) {
+  if (!pollingEnabled) return;
+  if (polling) clearTimeout(polling);
+  polling = setTimeout(async () => {
+    await fetchData();
+    if (!pollingEnabled) return;
+    scheduleNextFetch(currentInterval);
+  }, delay);
+}
 
 async function loadSettings() {
   const s = await storageGet('lhm_settings', {});
@@ -816,8 +834,10 @@ function applySettings() {
   document.getElementById('sbUrl').textContent = baseUrl + '/data.json';
   saveSettings();
   stopPolling();
+  pollingEnabled = true;
   retryCount = 0;
   currentInterval = interval * 1000;
+  fetchInFlight = false;
   setStatus('connecting');
   fetchAndSchedule();  // 串行调度：上一轮结束后再安排下一轮
   document.getElementById('settingsDrawer').classList.remove('open');
@@ -854,9 +874,8 @@ async function fetchAndSchedule() {
   try {
     // 5秒超时，防止连接不上时请求堆积
     const ac = new AbortController();
-    const to = setTimeout(() => ac.abort(), 5000);
+    to = setTimeout(() => ac.abort(), 5000);
     const r = await fetch(`${baseUrl}/data.json`, { cache: 'no-store', signal: ac.signal });
-    clearTimeout(to);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     retryCount = 0;
