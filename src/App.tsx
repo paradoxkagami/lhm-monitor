@@ -1,114 +1,109 @@
 import { useState, useCallback, useEffect, useMemo } from 'preact/hooks'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { TitleBar } from '@/components/TitleBar'
 import { Dashboard } from '@/components/Dashboard'
 import { Settings } from '@/components/Settings'
 import { StatusBar } from '@/components/StatusBar'
-import { usePolling } from '@/hooks/usePolling'
-import { useSettings } from '@/hooks/useSettings'
-import { useTheme } from '@/hooks/useTheme'
+import { useSettings, usePolling, useTheme } from '@/hooks'
 
 export function App() {
-  const { settings, updateSettings, loaded } = useSettings()
-  const { mode } = useTheme(settings.theme)
-  const {
-    data,
-    error,
-    status,
-    latencyMs,
-    lastUpdate,
-    retryCount,
-    start,
-    stop,
-    paused,
-    setPaused,
-  } = usePolling()
+  const { settings, updateSettings } = useSettings()
+  const { status, data, start, stop } = usePolling()
+  const { isDark } = useTheme(settings?.theme)
 
-  // UI 状态
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
 
-  // 监听置顶状态（Electron 主进程回复）
-  useEffect(() => {
-    if (!window.electronAPI) return
-    return window.electronAPI.onTopState((p) => setPinned(p))
-  }, [])
+  const appWindow = useMemo(() => getCurrentWindow(), [])
 
-  // 窗口可见性控制
   useEffect(() => {
-    if (!window.electronAPI) return
-    return window.electronAPI.onWindowVisibility((visible) => {
-      setPaused(!visible)
-      document.body.classList.toggle('window-hidden', !visible)
-    })
-  }, [setPaused])
-
-  // 启动时自动连接（仅 Electron）
-  useEffect(() => {
-    if (!loaded) return
-    if (settings.ip && window.electronAPI) {
-      const t = setTimeout(() => {
-        start(settings.ip, settings.port, settings.interval)
-      }, 500)
+    if (!settings) return
+    if (settings.ip) {
+      const t = setTimeout(() => start(settings.ip, settings.port, settings.interval), 500)
       return () => clearTimeout(t)
     }
-  }, [loaded]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [settings])
 
-  // 键盘快捷键
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return
-      if (e.key === 's' || e.key === 'S') {
-        setSettingsOpen((v) => !v)
-      } else if (e.key === 't' || e.key === 'T') {
-        window.electronAPI?.toggleTop()
-      }
+    const loadBounds = async () => {
+      const { loadWindowBounds } = await import('@/core/api')
+      const bounds = await loadWindowBounds()
+      try {
+        await appWindow.setSize(new (await import('@tauri-apps/api/dpi')).LogicalSize(bounds.width, bounds.height))
+        await appWindow.setPosition(new (await import('@tauri-apps/api/dpi')).LogicalPosition(bounds.x, bounds.y))
+      } catch {}
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [])
+
+    const saveBounds = async () => {
+      const { saveWindowBounds } = await import('@/core/api')
+      try {
+        const size = await appWindow.outerSize()
+        const pos = await appWindow.outerPosition()
+        await saveWindowBounds({ width: size.width, height: size.height, x: pos.x, y: pos.y })
+      } catch {}
+    }
+
+    loadBounds()
+
+    const unlistenResize = setInterval(saveBounds, 5000)
+
+    return () => clearInterval(unlistenResize)
+  }, [appWindow])
 
   const handleConnect = useCallback(() => {
-    if (settings.ip) {
+    if (settings?.ip) {
       start(settings.ip, settings.port, settings.interval)
     }
-  }, [settings.ip, settings.port, settings.interval, start])
+  }, [settings, start])
 
   const handleStop = useCallback(() => stop(), [stop])
 
-  const handleTogglePin = useCallback(() => {
-    if (window.electronAPI) {
-      window.electronAPI.toggleTop()
-    } else {
-      setPinned((v) => !v)
-    }
-  }, [])
+  const handleTogglePin = useCallback(async () => {
+    const newPinned = !pinned
+    setPinned(newPinned)
+    await appWindow.setAlwaysOnTop(newPinned)
+  }, [pinned, appWindow])
 
-  const handleHideToTray = useCallback(() => {
-    window.electronAPI?.hide()
-  }, [])
+  const handleHideToTray = useCallback(async () => {
+    await appWindow.hide()
+  }, [appWindow])
 
-  // DPI 缩放
-  const rootStyle = useMemo(
-    () => ({
-      fontSize: `${settings.fontSize}px`,
-      fontFamily: settings.fontFamily,
-      '--dpi-scale': settings.dpiScale / 100,
-      '--theme-mode': mode,
-    }),
-    [settings.fontSize, settings.fontFamily, settings.dpiScale, mode]
-  )
+  const handleMinimize = useCallback(async () => {
+    await appWindow.minimize()
+  }, [appWindow])
+
+  const handleMaximize = useCallback(async () => {
+    const isMax = await appWindow.isMaximized()
+    if (isMax) await appWindow.unmaximize()
+    else await appWindow.maximize()
+  }, [appWindow])
+
+  const handleClose = useCallback(() => {
+    appWindow.hide()
+  }, [appWindow])
+
+  const rootStyle = useMemo(() => ({
+    fontSize: `${settings?.font_size ?? 13}px`,
+    fontFamily: settings?.font_family ?? 'inherit',
+    '--dpi-scale': (settings?.dpi_scale ?? 100) / 100,
+    '--theme-mode': isDark ? 'dark' : 'light',
+  }), [settings, isDark])
+
+  if (!settings) return null
 
   return (
     <div class="app-shell" style={rootStyle}>
       <TitleBar
-        pcName={data?.pcName ?? ''}
+        pcName={data?.pc_name ?? ''}
         status={status}
         pinned={pinned}
         onToggleSettings={() => setSettingsOpen((v) => !v)}
         onTogglePin={handleTogglePin}
         onHideToTray={handleHideToTray}
+        onMinimize={handleMinimize}
+        onMaximize={handleMaximize}
+        onClose={handleClose}
       />
-
       <Settings
         open={settingsOpen}
         settings={settings}
@@ -118,15 +113,12 @@ export function App() {
         onStop={handleStop}
         onClose={() => setSettingsOpen(false)}
       />
-
-      <Dashboard data={data} columnMode={settings.columnMode} error={error} status={status} />
-
-      <StatusBar
+      <Dashboard
+        data={data}
+        columnMode={settings.column_mode}
         status={status}
-        latencyMs={latencyMs}
-        lastUpdate={lastUpdate}
-        error={error}
       />
+      <StatusBar status={status} />
     </div>
   )
 }

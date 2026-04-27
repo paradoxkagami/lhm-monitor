@@ -9,11 +9,8 @@ interface SensorRowProps {
 export const SensorRow = memo(
   function SensorRow({ sensor }: SensorRowProps) {
     const { name, value, min, max, unit } = sensor
-
-    const displayValue =
-      Math.abs(value) < 100 ? value.toFixed(1) : Math.round(value).toString()
-
-    const hasRange = min !== undefined && max !== undefined && max > min
+    const displayValue = Math.abs(value) < 100 ? value.toFixed(1) : Math.round(value).toString()
+    const hasRange = max > min
 
     return (
       <div class={styles.sensorRow}>
@@ -23,9 +20,7 @@ export const SensorRow = memo(
           {unit && <span class={styles.sensorUnit}>{unit}</span>}
         </span>
         {hasRange && (
-          <span class={styles.sensorRange}>
-            min {min.toFixed(1)} / max {max.toFixed(1)}
-          </span>
+          <span class={styles.sensorRange}>min {min.toFixed(1)} / max {max.toFixed(1)}</span>
         )}
       </div>
     )

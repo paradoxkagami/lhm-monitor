@@ -1,192 +1,32 @@
-/* ── 抽屉容器 ──────────────────────── */
-.drawer {
-  position: absolute;
-  top: var(--titlebar-height);
-  right: 0;
-  width: 320px;
-  max-height: calc(100% - var(--titlebar-height) - var(--statusbar-height));
-  background: var(--bg-secondary);
-  border-left: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  border-bottom-left-radius: var(--radius);
-  box-shadow: var(--shadow);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  opacity: 0;
-  transition: transform var(--transition-normal), opacity var(--transition-normal);
-  overflow-y: auto;
-}
+.drawer { position: absolute; top: var(--titlebar-height); right: 0; width: 320px; max-height: calc(100% - var(--titlebar-height) - var(--statusbar-height)); background: var(--bg-secondary); border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); border-bottom-left-radius: var(--radius); box-shadow: var(--shadow); z-index: 100; display: flex; flex-direction: column; transform: translateX(100%); opacity: 0; transition: transform var(--transition-normal), opacity var(--transition-normal); overflow-y: auto; }
+.drawer.open { transform: translateX(0); opacity: 1; }
 
-.drawer.open {
-  transform: translateX(0);
-  opacity: 1;
-}
+.tabBar { display: flex; align-items: center; gap: 2px; padding: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; position: sticky; top: 0; background: var(--bg-secondary); }
+.tabBtn { flex: 1; padding: 6px 8px; font-size: 12px; border-radius: 4px; color: var(--text-secondary); transition: background var(--transition-fast), color var(--transition-fast); }
+.tabBtn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.tabActive { background: var(--accent) !important; color: white !important; }
+.closeBtn { width: 24px; height: 24px; border-radius: 4px; font-size: 10px; color: var(--text-tertiary); margin-left: 4px; }
+.closeBtn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
 
-/* ── Tab 导航 ──────────────────────── */
-.tabBar {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 8px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  background: var(--bg-secondary);
-}
+.body { padding: 12px; }
+.tab { display: flex; flex-direction: column; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field > span:first-child { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+.input { padding: 6px 10px; font-size: 13px; }
+.select { padding: 6px 10px; font-size: 13px; cursor: pointer; }
+.range { width: 100%; cursor: pointer; accent-color: var(--accent); }
 
-.tabBtn {
-  flex: 1;
-  padding: 6px 8px;
-  font-size: 12px;
-  border-radius: 4px;
-  color: var(--text-secondary);
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
+.actions { display: flex; gap: 8px; margin-top: 4px; }
+.btn { flex: 1; padding: 8px; border-radius: var(--radius); font-size: 12px; font-weight: 500; transition: background var(--transition-fast); }
+.connectBtn { background: var(--accent); color: white; }
+.connectBtn:hover { background: var(--accent-hover); }
+.connectBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.stopBtn { background: var(--danger); color: white; }
+.stopBtn:hover { background: #ef4444; }
+.resetBtn { background: var(--bg-tertiary); color: var(--text-secondary); }
+.resetBtn:hover { background: var(--border-hover); color: var(--text-primary); }
 
-.tabBtn:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.tabActive {
-  background: var(--accent) !important;
-  color: white !important;
-}
-
-.closeBtn {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  font-size: 10px;
-  color: var(--text-tertiary);
-  margin-left: 4px;
-}
-
-.closeBtn:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-/* ── Tab 内容区 ────────────────────── */
-.body {
-  padding: 12px;
-}
-
-.tab {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* ── 表单字段 ──────────────────────── */
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.field > span:first-child {
-  font-size: 11px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.input {
-  padding: 6px 10px;
-  font-size: 13px;
-}
-
-.select {
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.range {
-  width: 100%;
-  cursor: pointer;
-  accent-color: var(--accent);
-}
-
-/* ── 按钮区域 ──────────────────────── */
-.actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.btn {
-  flex: 1;
-  padding: 8px;
-  border-radius: var(--radius);
-  font-size: 12px;
-  font-weight: 500;
-  transition: background var(--transition-fast);
-}
-
-.connectBtn {
-  background: var(--accent);
-  color: white;
-}
-
-.connectBtn:hover {
-  background: var(--accent-hover);
-}
-
-.connectBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.stopBtn {
-  background: var(--danger);
-  color: white;
-}
-
-.stopBtn:hover {
-  background: #ef4444;
-}
-
-.resetBtn {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-}
-
-.resetBtn:hover {
-  background: var(--border-hover);
-  color: var(--text-primary);
-}
-
-/* ── Toggle 按钮组 ─────────────────── */
-.toggle,
-.themeToggle {
-  display: flex;
-  gap: 2px;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 2px;
-}
-
-.toggleBtn,
-.themeBtn {
-  flex: 1;
-  padding: 5px 8px;
-  font-size: 11px;
-  border-radius: 4px;
-  color: var(--text-secondary);
-}
-
-.toggleBtn:hover,
-.themeBtn:hover {
-  color: var(--text-primary);
-}
-
-.toggleActive,
-.themeActive {
-  background: var(--accent);
-  color: white !important;
-}
+.toggle, .themeToggle { display: flex; gap: 2px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 2px; }
+.toggleBtn, .themeBtn { flex: 1; padding: 5px 8px; font-size: 11px; border-radius: 4px; color: var(--text-secondary); }
+.toggleBtn:hover, .themeBtn:hover { color: var(--text-primary); }
+.toggleActive, .themeActive { background: var(--accent); color: white !important; }

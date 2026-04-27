@@ -1,4 +1,3 @@
-/* ── 仪表盘网格 ────────────────────── */
 .dashboard {
   flex: 1;
   display: grid;
@@ -9,7 +8,6 @@
   align-content: start;
 }
 
-/* ── 设备卡片 ──────────────────────── */
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -19,10 +17,7 @@
   contain: layout style paint;
   transition: border-color var(--transition-fast);
 }
-
-.card:hover {
-  border-color: hsl(var(--card-hue, 210), 50%, 50%);
-}
+.card:hover { border-color: hsl(var(--card-hue, 210), 50%, 50%); }
 
 .header {
   display: flex;
@@ -32,121 +27,24 @@
   border-bottom: 1px solid var(--border);
   background: hsl(var(--card-hue, 210), 20%, 15%);
 }
+.badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; color: white; letter-spacing: 0.5px; }
+.deviceName { font-size: 11px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 3px;
-  color: white;
-  letter-spacing: 0.5px;
-}
+.body { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.gaugeWrap { display: flex; justify-content: center; padding: 8px 0; }
 
-.deviceName {
-  font-size: 11px;
-  color: var(--text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+.maxTemp { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; background: var(--bg-primary); border-radius: 4px; }
+.maxTempLabel { font-size: 10px; color: var(--text-tertiary); }
+.maxTempValue { font-size: 14px; font-weight: 600; }
 
-.body {
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.sensorGroup { display: flex; flex-direction: column; gap: 2px; }
 
-/* ── 仪表盘容器 ────────────────────── */
-.gaugeWrap {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0;
-}
-
-/* ── 最高温度 ──────────────────────── */
-.maxTemp {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 8px;
-  background: var(--bg-primary);
-  border-radius: 4px;
-}
-
-.maxTempLabel {
-  font-size: 10px;
-  color: var(--text-tertiary);
-}
-
-.maxTempValue {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* ── 传感器组 ──────────────────────── */
-.sensorGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* ── 空状态 ────────────────────────── */
-.empty {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-  padding: 24px;
-}
-
-.placeholder {
-  color: var(--text-tertiary);
-  font-size: 13px;
-}
-
-.emptyData {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-
-.emptyIcon {
-  font-size: 32px;
-}
-
-.emptySub {
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-
-.errorHint {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.errorIcon {
-  font-size: 24px;
-  text-align: center;
-}
-
-.errorTips {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  line-height: 1.6;
-}
-
-.errorTips p {
-  margin: 0;
-}
+.empty { grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; min-height: 200px; padding: 24px; }
+.placeholder { color: var(--text-tertiary); font-size: 13px; }
+.emptyData { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13px; }
+.emptyIcon { font-size: 32px; }
+.emptySub { font-size: 11px; color: var(--text-tertiary); }
+.errorHint { display: flex; flex-direction: column; gap: 8px; color: var(--text-secondary); font-size: 12px; }
+.errorIcon { font-size: 24px; text-align: center; }
+.errorTips { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-size: 11px; color: var(--text-tertiary); line-height: 1.6; }
+.errorTips p { margin: 0; }

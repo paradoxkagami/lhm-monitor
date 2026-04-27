@@ -1,6 +1,6 @@
 import { memo } from '@/core/memo'
 import { useState } from 'preact/hooks'
-import type { AppSettings } from '@/core/types'
+import type { AppSettings, PollStatus } from '@/core/types'
 import { BasicTab } from './BasicTab'
 import { AppearanceTab } from './AppearanceTab'
 import { LayoutTab } from './LayoutTab'
@@ -9,7 +9,7 @@ import styles from '@/styles/components/Settings.module.css'
 interface SettingsProps {
   open: boolean
   settings: AppSettings
-  status: 'idle' | 'connecting' | 'polling' | 'error'
+  status: PollStatus
   onUpdate: (partial: Partial<AppSettings>) => void
   onConnect: () => void
   onStop: () => void
@@ -25,13 +25,7 @@ const TABS: { key: Tab; label: string }[] = [
 ]
 
 export const Settings = memo(function Settings({
-  open,
-  settings,
-  status,
-  onUpdate,
-  onConnect,
-  onStop,
-  onClose,
+  open, settings, status, onUpdate, onConnect, onStop, onClose,
 }: SettingsProps) {
   const [tab, setTab] = useState<Tab>('basic')
 
@@ -39,35 +33,16 @@ export const Settings = memo(function Settings({
     <div class={`${styles.drawer} ${open ? styles.open : ''}`}>
       <div class={styles.tabBar}>
         {TABS.map((t) => (
-          <button
-            key={t.key}
-            class={`${styles.tabBtn} ${tab === t.key ? styles.tabActive : ''}`}
-            onClick={() => setTab(t.key)}
-          >
+          <button key={t.key} class={`${styles.tabBtn} ${tab === t.key ? styles.tabActive : ''}`} onClick={() => setTab(t.key)}>
             {t.label}
           </button>
         ))}
-        <button class={styles.closeBtn} onClick={onClose}>
-          ✕
-        </button>
+        <button class={styles.closeBtn} onClick={onClose}>✕</button>
       </div>
-
       <div class={styles.body}>
-        {tab === 'basic' && (
-          <BasicTab
-            settings={settings}
-            onUpdate={onUpdate}
-            status={status}
-            onConnect={onConnect}
-            onStop={onStop}
-          />
-        )}
-        {tab === 'appearance' && (
-          <AppearanceTab settings={settings} onUpdate={onUpdate} />
-        )}
-        {tab === 'layout' && (
-          <LayoutTab settings={settings} onUpdate={onUpdate} />
-        )}
+        {tab === 'basic' && <BasicTab settings={settings} onUpdate={onUpdate} status={status} onConnect={onConnect} onStop={onStop} />}
+        {tab === 'appearance' && <AppearanceTab settings={settings} onUpdate={onUpdate} />}
+        {tab === 'layout' && <LayoutTab settings={settings} onUpdate={onUpdate} />}
       </div>
     </div>
   )

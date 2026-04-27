@@ -1,45 +1,10 @@
-.statusBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: var(--statusbar-height);
-  padding: 0 10px;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border);
-  font-size: 10px;
-  flex-shrink: 0;
-}
-
-.left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.right {
-  color: var(--text-tertiary);
-}
-
-.latency {
-  color: var(--success);
-}
-
-.error {
-  color: var(--danger);
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.connecting {
-  color: var(--warning);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.idle {
-  color: var(--text-tertiary);
-}
+.statusBar { display: flex; align-items: center; justify-content: space-between; height: var(--statusbar-height); padding: 0 10px; background: var(--bg-secondary); border-top: 1px solid var(--border); font-size: 10px; flex-shrink: 0; }
+.left { display: flex; align-items: center; gap: 6px; }
+.right { color: var(--text-tertiary); }
+.latency { color: var(--success); }
+.error { color: var(--danger); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.connecting { color: var(--warning); animation: pulse 1.5s ease-in-out infinite; }
+.idleText { color: var(--text-tertiary); }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }

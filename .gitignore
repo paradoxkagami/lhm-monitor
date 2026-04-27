@@ -1,28 +1,15 @@
-# Dependencies
 node_modules/
-
-# Build output
 dist/
+src-tauri/target/
 dist-electron/
 dist-package/
 out/
 
-# OS files
 .DS_Store
 Thumbs.db
 *.log
 
-# IDE
 .vscode/
 .idea/
 
-# Electron
-*.asar
-
-# Release archives
 *.zip
-
-# GitHub release API responses
-release-body.json
-release-response.json
-upload-response.json

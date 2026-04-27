@@ -1,9 +1,9 @@
 import { memo } from '@/core/memo'
-import { getLoadColor } from '@/core/parser'
+import { getLoadColor } from '@/core/types'
 import styles from '@/styles/components/Gauge.module.css'
 
 interface GaugeRingProps {
-  value: number // 0-100
+  value: number
   label: string
   unit?: string
   size?: number
@@ -21,32 +21,16 @@ export const GaugeRing = memo(
     return (
       <div class={styles.gauge} style={{ width: size, height: size }}>
         <svg viewBox={`0 0 ${size} ${size}`} class={styles.svg}>
-          <circle
-            class={styles.track}
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke-width={strokeWidth}
-          />
+          <circle class={styles.track} cx={size / 2} cy={size / 2} r={radius} fill="none" stroke-width={strokeWidth} />
           <circle
             class={styles.fill}
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke-width={strokeWidth}
-            stroke={color}
-            stroke-dasharray={circumference}
-            stroke-dashoffset={dashOffset}
-            stroke-linecap="round"
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            cx={size / 2} cy={size / 2} r={radius} fill="none" stroke-width={strokeWidth}
+            stroke={color} stroke-dasharray={circumference} stroke-dashoffset={dashOffset}
+            stroke-linecap="round" transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />
         </svg>
         <div class={styles.valueWrap}>
-          <span class={styles.value} style={{ color }}>
-            {Math.round(progress)}
-          </span>
+          <span class={styles.value} style={{ color }}>{Math.round(progress)}</span>
           <span class={styles.unit}>{unit}</span>
         </div>
         <span class={styles.label}>{label}</span>

@@ -1,17 +1,20 @@
-# LHM Monitor v2
+# LHM Monitor v3
 
-> 局域网 LibreHardwareMonitor 硬件监控桌面小工具 —— Preact + TypeScript 重写版
+> 局域网 LibreHardwareMonitor 硬件监控桌面工具 —— Tauri 2 + Preact 重写版
 
 ## 功能特点
 
-- 实时监控 CPU / GPU / 主板 / 内存 / 硬盘传感器数据
-- Windows 11 Fluent Design 风格，深色 / 浅色 / 跟随系统主题
+- 实时监控 CPU / GPU / 主板 / 硬盘传感器数据
+- Rust 后端处理数据轮询和解析，极低资源占用
+- 正确利用 LHM 树结构分类传感器（Temperature/Clock/Voltage 等）
+- 自动过滤网络适配器子条目，只显示真实硬件设备
+- 安装包仅 2.5MB（NSIS）/ 3.9MB（MSI）
+- 暗色 / 浅色 / 跟随系统主题
 - 响应式布局，窗口大小自适应列数
-- 丰富的自定义选项（主题、字体、列数、DPI 缩放）
 - 系统置顶 + 系统托盘最小化
 - 所有设置自动持久化
 - 指数退避重连 + 超时控制
-- 窗口隐藏时自动暂停轮询和动画，零 CPU 消耗
+- 窗口隐藏时自动暂停轮询，零 CPU 消耗
 
 ## 快速开始
 
@@ -25,16 +28,18 @@
 ```bash
 git clone https://github.com/paradoxkagami/lhm-monitor.git
 cd lhm-monitor
-git checkout refactor/rewrite-v2
 npm install
-npm run dev
+cd src-tauri && cargo build && cd ..
+npm run tauri dev
 ```
 
 ### 构建
 
 ```bash
-npm run package
+npm run tauri build
 ```
+
+构建产物位于 `src-tauri/target/release/bundle/`。
 
 ## 快捷键
 
@@ -43,50 +48,59 @@ npm run package
 | `S` | 展开/收起设置面板 |
 | `T` | 切换窗口置顶 |
 
-## v2 技术栈
+## 技术栈
 
 | 层 | 技术 |
 |---|------|
-| 运行时 | Electron 33+ |
+| 桌面框架 | Tauri 2 |
+| 后端 | Rust (reqwest + tokio + serde) |
 | 语言 | TypeScript (strict) |
 | UI 框架 | Preact 10 (memo 差异化渲染) |
-| 构建工具 | Vite 6 + vite-plugin-electron |
+| 构建工具 | Vite 6 + @tauri-apps/cli |
 | 样式 | CSS Modules + CSS Custom Properties |
-| 持久化 | electron-store v10 |
+| 持久化 | Rust JSON 文件读写 |
 
 ## 架构
 
 ```
 lhm-monitor/
-├── electron/              # Electron 主进程
-│   ├── main.ts            # 窗口管理、托盘、单实例锁
-│   ├── preload.ts         # Context bridge 安全桥接
-│   └── ipc/
-│       └── channels.ts    # IPC 通道常量
-├── src/                   # 渲染进程 (Preact)
-│   ├── main.tsx           # 入口
-│   ├── App.tsx            # 根组件
-│   ├── components/        # UI 组件
-│   │   ├── TitleBar.tsx
-│   │   ├── Settings/      # 设置面板 (3 Tab)
-│   │   ├── Dashboard/     # 仪表盘（memo 组件）
-│   │   └── StatusBar.tsx
-│   ├── hooks/             # 自定义 hooks
-│   │   ├── usePolling.ts  # 串行轮询 + 退避
-│   │   ├── useSettings.ts
-│   │   ├── useTheme.ts
-│   │   └── useResizeObserver.ts
-│   ├── core/              # 核心逻辑
-│   │   ├── parser.ts      # LHM JSON 解析器
-│   │   ├── connection.ts  # HTTP 客户端
-│   │   └── types.ts       # TypeScript 类型
-│   └── styles/            # CSS Modules
-├── assets/icon.ico
+├── src/                       # 前端 (Preact)
+│   ├── main.tsx               # 入口
+│   ├── App.tsx                # 根组件
+│   ├── components/
+│   │   ├── TitleBar.tsx       # 标题栏（菜单按钮 + 窗口控制）
+│   │   ├── Settings/          # 设置面板 (3 Tab)
+│   │   ├── Dashboard/         # 仪表盘（memo 组件）
+│   │   └── StatusBar.tsx      # 底部状态栏
+│   ├── hooks/                 # 自定义 hooks
+│   ├── core/                  # 核心逻辑
+│   │   ├── api.ts             # Tauri invoke 封装
+│   │   ├── memo.ts            # 自定义 memo
+│   │   └── types.ts           # TypeScript 类型
+│   └── styles/                # CSS Modules
+├── src-tauri/                 # Rust 后端
+│   ├── src/
+│   │   ├── main.rs            # 入口
+│   │   ├── lib.rs             # Tauri 命令 + 窗口管理
+│   │   ├── lhm.rs             # LHM JSON 解析器
+│   │   ├── poller.rs          # 轮询器（串行 + 退避）
+│   │   └── store.rs           # 设置持久化
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── legacy/                    # 旧版归档
+│   └── v2-electron-preact/    # v2 Electron 版本
 ├── package.json
 ├── vite.config.ts
-├── tsconfig.json
-└── electron-builder.yml
+└── tsconfig.json
 ```
+
+## 版本历史
+
+| 版本 | 框架 | 安装包大小 | 说明 |
+|------|------|-----------|------|
+| v3 | Tauri 2 + Rust | ~2.5MB | 当前版本，Rust 后端 |
+| v2 | Electron + Preact | ~80MB | 首次 Preact 重写 |
+| v1 | Electron + Vanilla JS | ~80MB | 初始版本 |
 
 ## License
 

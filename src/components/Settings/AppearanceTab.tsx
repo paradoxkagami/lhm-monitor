@@ -13,25 +13,14 @@ const THEMES: { value: ThemeMode; label: string }[] = [
   { value: 'auto', label: '跟随系统' },
 ]
 
-export const AppearanceTab = memo(function AppearanceTab({
-  settings,
-  onUpdate,
-}: AppearanceTabProps) {
+export const AppearanceTab = memo(function AppearanceTab({ settings, onUpdate }: AppearanceTabProps) {
   return (
     <div class={styles.tab}>
       <div class={styles.field}>
         <span>主题</span>
         <div class={styles.themeToggle}>
           {THEMES.map((t) => (
-            <button
-              key={t.value}
-              class={`${styles.themeBtn} ${
-                settings.theme === t.value ? styles.themeActive : ''
-              }`}
-              onClick={() => onUpdate({ theme: t.value })}
-            >
-              {t.label}
-            </button>
+            <button key={t.value} class={`${styles.themeBtn} ${settings.theme === t.value ? styles.themeActive : ''}`} onClick={() => onUpdate({ theme: t.value })}>{t.label}</button>
           ))}
         </div>
       </div>

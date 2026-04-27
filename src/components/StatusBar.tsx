@@ -1,19 +1,13 @@
 import { memo } from '@/core/memo'
 import styles from '@/styles/components/StatusBar.module.css'
+import type { PollStatus } from '@/core/types'
 
 interface StatusBarProps {
-  status: 'idle' | 'connecting' | 'polling' | 'error'
-  latencyMs: number
-  lastUpdate: number | null
-  error: string | null
+  status: PollStatus
 }
 
-export const StatusBar = memo(function StatusBar({
-  status,
-  latencyMs,
-  lastUpdate,
-  error,
-}: StatusBarProps) {
+export const StatusBar = memo(function StatusBar({ status }: StatusBarProps) {
+  const lastUpdate = status.type === 'polling' ? status.last_update : null
   const timeStr = lastUpdate
     ? new Date(lastUpdate).toLocaleTimeString('zh-CN', { hour12: false })
     : '--:--:--'
@@ -21,24 +15,20 @@ export const StatusBar = memo(function StatusBar({
   return (
     <div class={styles.statusBar}>
       <span class={styles.left}>
-        {status === 'polling' && (
-          <span class={styles.latency}>
-            延迟 {latencyMs}ms
-          </span>
+        {status.type === 'polling' && (
+          <span class={styles.latency}>延迟 {status.latency_ms}ms</span>
         )}
-        {status === 'error' && error && (
-          <span class={styles.error}>{error}</span>
+        {status.type === 'error' && (
+          <span class={styles.error}>{status.message}</span>
         )}
-        {status === 'connecting' && (
+        {status.type === 'connecting' && (
           <span class={styles.connecting}>连接中...</span>
         )}
-        {status === 'idle' && (
-          <span class={styles.idle}>就绪 — 请配置连接</span>
+        {status.type === 'idle' && (
+          <span class={styles.idleText}>就绪 — 请配置连接</span>
         )}
       </span>
-      <span class={styles.right}>
-        最后更新 {timeStr}
-      </span>
+      <span class={styles.right}>最后更新 {timeStr}</span>
     </div>
   )
 })

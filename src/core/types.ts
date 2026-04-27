@@ -1,27 +1,3 @@
-// ── LHM /data.json 数据结构 ──────────────────
-
-export interface LHMSensor {
-  Text: string
-  Value: number
-  Min: number
-  Max: number
-}
-
-export interface LHMNode {
-  Text: string
-  Children: LHMNode[]
-  // 叶节点上的传感器属性
-  Value?: number
-  Min?: number
-  Max?: number
-}
-
-export interface LHMResponse {
-  Children: LHMNode[]
-}
-
-// ── 内部数据结构 ──────────────────────────────
-
 export type SensorCategory =
   | 'Load'
   | 'Temperature'
@@ -38,8 +14,7 @@ export interface ParsedSensor {
   max: number
   category: SensorCategory
   unit: string
-  /** 负载百分比 0-100（仅 Load 类计算） */
-  loadPercent?: number
+  load_percent?: number
 }
 
 export type DeviceType = 'CPU' | 'GPU' | 'Motherboard' | 'Memory' | 'Storage'
@@ -54,16 +29,14 @@ export interface ParsedDevice {
   name: string
   sensors: ParsedSensor[]
   color: DeviceColor
-  load?: number // 0-100
-  maxTemp?: number
+  load?: number
+  max_temp?: number
 }
 
 export interface ParsedData {
-  pcName: string
+  pc_name: string
   devices: ParsedDevice[]
 }
-
-// ── 设置 ──────────────────────────────────────
 
 export type ThemeMode = 'dark' | 'light' | 'auto'
 export type ColumnMode = 'auto' | '1' | '2' | '3' | '4'
@@ -73,21 +46,10 @@ export interface AppSettings {
   port: number
   interval: number
   theme: ThemeMode
-  fontFamily: string
-  fontSize: number
-  dpiScale: number
-  columnMode: ColumnMode
-}
-
-export const DEFAULT_SETTINGS: AppSettings = {
-  ip: '',
-  port: 8085,
-  interval: 3,
-  theme: 'dark',
-  fontFamily: 'Segoe UI Variable, "Microsoft YaHei", "PingFang SC", sans-serif',
-  fontSize: 13,
-  dpiScale: 100,
-  columnMode: 'auto',
+  font_family: string
+  font_size: number
+  dpi_scale: number
+  column_mode: ColumnMode
 }
 
 export interface WindowBounds {
@@ -97,38 +59,22 @@ export interface WindowBounds {
   y: number
 }
 
-// ── IPC 通道 ──────────────────────────────────
+export type PollStatus =
+  | { type: 'idle' }
+  | { type: 'connecting' }
+  | { type: 'polling'; latency_ms: number; last_update: number | null; retry_count: number }
+  | { type: 'error'; message: string; retry_count: number }
 
-export const IPC = {
-  WIN_CLOSE: 'win-close',
-  WIN_MINIMIZE: 'win-minimize',
-  WIN_MAXIMIZE: 'win-maximize',
-  WIN_HIDE: 'win-hide',
-  WIN_SHOW: 'win-show',
-  WIN_TOGGLE_TOP: 'win-toggle-top',
-  STORE_GET: 'store-get',
-  STORE_SET: 'store-set',
-  WINDOW_VISIBILITY: 'window-visibility',
-  TOP_STATE: 'top-state',
-} as const
-
-// ── electronAPI 接口（preload 暴露）───────────
-
-export interface ElectronAPI {
-  close: () => void
-  minimize: () => void
-  maximize: () => void
-  toggleTop: () => void
-  hide: () => void
-  show: () => void
-  onWindowVisibility: (cb: (visible: boolean) => void) => () => void
-  onTopState: (cb: (pinned: boolean) => void) => () => void
-  storeGet: (key: string, def?: unknown) => Promise<unknown>
-  storeSet: (key: string, val: unknown) => void
+export function getLoadColor(percent: number): string {
+  if (percent >= 90) return '#f87171'
+  if (percent >= 70) return '#fb923c'
+  if (percent >= 50) return '#facc15'
+  return '#4ade80'
 }
 
-declare global {
-  interface Window {
-    electronAPI?: ElectronAPI
-  }
+export function getTempColor(temp: number): string {
+  if (temp >= 85) return '#f87171'
+  if (temp >= 70) return '#fb923c'
+  if (temp >= 50) return '#facc15'
+  return '#4ade80'
 }
