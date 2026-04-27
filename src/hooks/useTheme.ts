@@ -1,11 +1,16 @@
-import { useState, useEffect, useCallback } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 import type { ThemeMode } from '@/core/types'
 
-export function useTheme(initialMode: ThemeMode = 'dark') {
-  const [mode, setMode] = useState<ThemeMode>(initialMode)
+export function useTheme(externalMode: ThemeMode = 'dark') {
+  const [mode, setMode] = useState<ThemeMode>(externalMode)
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia('(prefers-color-scheme: dark)').matches
   )
+
+  // 同步外部 theme 变化 → 内部 state
+  useEffect(() => {
+    setMode(externalMode)
+  }, [externalMode])
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')

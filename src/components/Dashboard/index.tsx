@@ -9,6 +9,7 @@ interface DashboardProps {
   data: ParsedData | null
   columnMode: ColumnMode
   error: string | null
+  status: 'idle' | 'connecting' | 'polling' | 'error'
 }
 
 const MIN_CARD_WIDTH = 200
@@ -30,6 +31,7 @@ export const Dashboard = memo(function Dashboard({
   data,
   columnMode,
   error,
+  status,
 }: DashboardProps) {
   const { ref, width: containerWidth } = useResizeObserver<HTMLDivElement>()
 
@@ -52,6 +54,12 @@ export const Dashboard = memo(function Dashboard({
                 <p>2. 确认「远程 Web 服务器」已启用（选项 → 远程 Web 服务器 → 运行）</p>
                 <p>3. 检查防火墙是否放行端口</p>
               </div>
+            </div>
+          ) : status === 'polling' ? (
+            <div class={styles.emptyData}>
+              <span class={styles.emptyIcon}>📡</span>
+              <span>已连接 {data?.pcName || ''}，但未检测到硬件传感器</span>
+              <span class={styles.emptySub}>请检查目标电脑上 LibreHardwareMonitor 是否正常运行</span>
             </div>
           ) : (
             <span class={styles.placeholder}>输入目标 IP 并点击连接</span>

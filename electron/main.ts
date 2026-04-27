@@ -127,6 +127,9 @@ function createWindow() {
     show: false,
   })
 
+  // 绕过系统代理（SOCKS 代理会拦截 LAN HTTP 请求）
+  mainWindow.webContents.session.setProxy({ mode: 'direct' })
+
   // Win11 下确保无背景材质
   try {
     mainWindow.setBackgroundMaterial('none')

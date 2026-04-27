@@ -118,7 +118,7 @@ export function App() {
         onClose={() => setSettingsOpen(false)}
       />
 
-      <Dashboard data={data} columnMode={settings.columnMode} error={error} />
+      <Dashboard data={data} columnMode={settings.columnMode} error={error} status={status} />
 
       <StatusBar
         status={status}
