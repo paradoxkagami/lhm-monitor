@@ -18,3 +18,11 @@ Thumbs.db
 
 # Electron
 *.asar
+
+# Release archives
+*.zip
+
+# GitHub release API responses
+release-body.json
+release-response.json
+upload-response.json

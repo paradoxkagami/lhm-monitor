@@ -20,16 +20,16 @@ export const BasicTab = memo(function BasicTab({
 }: BasicTabProps) {
   const [ip, setIp] = useState(settings.ip)
   const [port, setPort] = useState(String(settings.port))
-  const [interval, setInterval] = useState(String(settings.interval))
+  const [intervalVal, setIntervalVal] = useState(String(settings.interval))
 
   const handleApply = useCallback(() => {
     onUpdate({
       ip,
       port: parseInt(port, 10) || 8085,
-      interval: parseInt(interval, 10) || 3,
+      interval: parseInt(intervalVal, 10) || 3,
     })
     onConnect()
-  }, [ip, port, interval, onUpdate, onConnect])
+  }, [ip, port, intervalVal, onUpdate, onConnect])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -72,8 +72,8 @@ export const BasicTab = memo(function BasicTab({
         <span>刷新间隔（秒）</span>
         <input
           type="number"
-          value={interval}
-          onInput={(e) => setInterval(e.currentTarget.value)}
+          value={intervalVal}
+          onInput={(e) => setIntervalVal(e.currentTarget.value)}
           min="1"
           max="60"
           class={styles.input}
@@ -99,7 +99,7 @@ export const BasicTab = memo(function BasicTab({
           onClick={() => {
             setIp('')
             setPort('8085')
-            setInterval('3')
+            setIntervalVal('3')
           }}
         >
           ↺ 重置

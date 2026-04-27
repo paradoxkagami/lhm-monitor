@@ -1,5 +1,5 @@
 import { memo } from '@/core/memo'
-import { useCallback, useState, useEffect } from 'preact/hooks'
+import { useCallback, useState } from 'preact/hooks'
 import styles from '@/styles/components/TitleBar.module.css'
 
 interface TitleBarProps {
@@ -21,14 +21,6 @@ export const TitleBar = memo(function TitleBar({
 }: TitleBarProps) {
   const api = window.electronAPI
   const [maximized, setMaximized] = useState(false)
-
-  // 监听最大化状态（主进程回复）
-  useEffect(() => {
-    if (!api) return
-    return api.onTopState((p) => {
-      // We don't strictly need this here since pinned comes from props
-    })
-  }, [api])
 
   const statusLabel =
     status === 'polling'

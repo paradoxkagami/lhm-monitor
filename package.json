@@ -1,7 +1,7 @@
 {
   "name": "lhm-monitor",
-  "version": "2.0.1",
-  "description": "LibreHardwareMonitor 局域网桌面监控小工具",
+  "version": "2.0.3",
+  "description": "LibreHardwareMonitor 桌面监控工具",
   "main": "dist-electron/main.js",
   "author": "paradoxkagami",
   "license": "MIT",

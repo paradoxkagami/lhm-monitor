@@ -1,7 +1,27 @@
 import { useState, useEffect, useRef, useCallback } from 'preact/hooks'
 import { fetchLHMData, ConnectionError } from '@/core/connection'
 import { parseLHMData } from '@/core/parser'
-import type { ParsedData } from '@/core/types'
+import type { ParsedData, ParsedDevice } from '@/core/types'
+
+function devicesEqual(prev: ParsedDevice[], next: ParsedDevice[]): boolean {
+  if (prev.length !== next.length) return false
+  for (let i = 0; i < prev.length; i++) {
+    const a = prev[i], b = next[i]
+    if (a.name !== b.name || a.load !== b.load || a.maxTemp !== b.maxTemp) return false
+    if (a.sensors.length !== b.sensors.length) return false
+    for (let j = 0; j < a.sensors.length; j++) {
+      const sa = a.sensors[j], sb = b.sensors[j]
+      if (sa.value !== sb.value || sa.name !== sb.name || sa.min !== sb.min || sa.max !== sb.max) return false
+    }
+  }
+  return true
+}
+
+function dataEqual(prev: ParsedData | null, next: ParsedData): boolean {
+  if (!prev) return false
+  if (prev.pcName !== next.pcName) return false
+  return devicesEqual(prev.devices, next.devices)
+}
 
 interface PollingState {
   data: ParsedData | null
@@ -60,7 +80,7 @@ export function usePolling(): UsePollingReturn {
 
       setState((s) => ({
         ...s,
-        data: parsed,
+        data: dataEqual(s.data, parsed) ? s.data : parsed,
         error: null,
         status: 'polling',
         latencyMs,

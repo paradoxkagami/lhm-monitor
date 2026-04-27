@@ -38,6 +38,7 @@ export function App() {
     if (!window.electronAPI) return
     return window.electronAPI.onWindowVisibility((visible) => {
       setPaused(!visible)
+      document.body.classList.toggle('window-hidden', !visible)
     })
   }, [setPaused])
 
