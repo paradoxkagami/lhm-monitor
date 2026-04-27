@@ -27,6 +27,7 @@ body {
 
 /* ── App Shell ──────────────────────── */
 .app-shell {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;

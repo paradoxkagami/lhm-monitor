@@ -1,6 +1,6 @@
 /* ── 抽屉容器 ──────────────────────── */
 .drawer {
-  position: fixed;
+  position: absolute;
   top: var(--titlebar-height);
   right: 0;
   width: 320px;
