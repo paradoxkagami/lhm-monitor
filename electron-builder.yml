@@ -1,0 +1,31 @@
+appId: com.lhm.monitor
+productName: LHM Monitor
+copyright: Copyright © 2026
+
+directories:
+  output: dist-package
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  icon: assets/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerLanguages:
+    - zh_CN
+    - en_US
+  language: 2052
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: LHM Monitor
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - assets/**/*
+  - package.json

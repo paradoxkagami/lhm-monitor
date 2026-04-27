@@ -3,6 +3,8 @@ node_modules/
 
 # Build output
 dist/
+dist-electron/
+dist-package/
 out/
 
 # OS files
