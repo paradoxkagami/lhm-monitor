@@ -4,6 +4,7 @@ import type { AppSettings, PollStatus, ParsedData } from '@/core/types'
 import { BasicTab } from './BasicTab'
 import { AppearanceTab } from './AppearanceTab'
 import { LayoutTab } from './LayoutTab'
+import { AboutTab } from './AboutTab'
 import styles from '@/styles/components/Settings.module.css'
 
 interface SettingsProps {
@@ -17,12 +18,13 @@ interface SettingsProps {
   onClose: () => void
 }
 
-type Tab = 'basic' | 'appearance' | 'layout'
+type Tab = 'basic' | 'appearance' | 'layout' | 'about'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'basic', label: '基础' },
   { key: 'appearance', label: '外观' },
   { key: 'layout', label: '布局' },
+  { key: 'about', label: '关于' },
 ]
 
 export const Settings = memo(function Settings({
@@ -44,6 +46,7 @@ export const Settings = memo(function Settings({
         {tab === 'basic' && <BasicTab settings={settings} onUpdate={onUpdate} status={status} onConnect={onConnect} onStop={onStop} />}
         {tab === 'appearance' && <AppearanceTab settings={settings} onUpdate={onUpdate} />}
         {tab === 'layout' && <LayoutTab settings={settings} data={data} onUpdate={onUpdate} />}
+        {tab === 'about' && <AboutTab />}
       </div>
     </div>
   )

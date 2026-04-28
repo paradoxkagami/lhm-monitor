@@ -2,11 +2,19 @@ import { memo } from '@/core/memo'
 import styles from '@/styles/components/TitleBar.module.css'
 import type { PollStatus } from '@/core/types'
 
+interface UpdateInfo {
+  has_update: boolean
+  latest_version: string
+  current_version: string
+  html_url: string
+}
+
 interface TitleBarProps {
   pcName: string
   status: PollStatus
   pinned: boolean
   settingsOpen: boolean
+  updateInfo: UpdateInfo | null
   onToggleSettings: () => void
   onTogglePin: () => void
   onHideToTray: () => void
@@ -20,6 +28,7 @@ export const TitleBar = memo(function TitleBar({
   status,
   pinned,
   settingsOpen,
+  updateInfo,
   onToggleSettings,
   onTogglePin,
   onHideToTray,
@@ -44,6 +53,7 @@ export const TitleBar = memo(function TitleBar({
         <button class={`${styles.menuBtn} ${settingsOpen ? styles.menuActive : ''}`} onClick={onToggleSettings} title="设置菜单 (S)">
           <span class={styles.icon}>📊</span>
           <span class={styles.menuTitle}>LHM Monitor</span>
+          {updateInfo && <span class={styles.updateBadge} title={`新版本 v${updateInfo.latest_version} 可用`}>●</span>}
           <span class={styles.menuArrow}>{settingsOpen ? '▲' : '▼'}</span>
         </button>
         {pcName && <span class={styles.pcName}>{pcName}</span>}

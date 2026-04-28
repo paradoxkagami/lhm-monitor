@@ -1,10 +1,18 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'preact/hooks'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { invoke } from '@tauri-apps/api/core'
 import { TitleBar } from '@/components/TitleBar'
 import { Dashboard } from '@/components/Dashboard'
 import { Settings } from '@/components/Settings'
 import { StatusBar } from '@/components/StatusBar'
 import { useSettings, usePolling, useTheme } from '@/hooks'
+
+interface UpdateInfo {
+  has_update: boolean
+  latest_version: string
+  current_version: string
+  html_url: string
+}
 
 export function App() {
   const { settings, updateSettings } = useSettings()
@@ -13,9 +21,20 @@ export function App() {
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
 
   const appWindow = useMemo(() => getCurrentWindow(), [])
   const prevScaleRef = useRef(settings?.dpi_scale ?? 100)
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        const info = await invoke<UpdateInfo>('check_update')
+        if (info.has_update) setUpdateInfo(info)
+      } catch {}
+    }, 5000)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     if (!settings) return
@@ -119,6 +138,7 @@ export function App() {
         status={status}
         pinned={pinned}
         settingsOpen={settingsOpen}
+        updateInfo={updateInfo}
         onToggleSettings={() => setSettingsOpen((v) => !v)}
         onTogglePin={handleTogglePin}
         onHideToTray={handleHideToTray}

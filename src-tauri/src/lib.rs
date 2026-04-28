@@ -78,6 +78,61 @@ async fn save_window_bounds(
     store.save_window_bounds(&bounds)
 }
 
+#[derive(serde::Serialize)]
+struct UpdateInfo {
+    has_update: bool,
+    latest_version: String,
+    current_version: String,
+    html_url: String,
+}
+
+#[tauri::command]
+async fn check_update(app: tauri::AppHandle) -> Result<UpdateInfo, String> {
+    let current = app.config().version.clone().unwrap_or_default();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let resp: serde_json::Value = client
+        .get("https://api.github.com/repos/paradoxkagami/lhm-monitor/releases/latest")
+        .header("User-Agent", "LHM-Monitor")
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .json()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let tag = resp["tag_name"].as_str().unwrap_or("").trim_start_matches('v');
+    let url = resp["html_url"].as_str().unwrap_or("").to_string();
+
+    let has_update = !tag.is_empty() && tag != current && is_newer_version(&current, tag);
+
+    Ok(UpdateInfo {
+        has_update,
+        latest_version: tag.to_string(),
+        current_version: current.clone(),
+        html_url: url,
+    })
+}
+
+#[tauri::command]
+async fn open_url(url: String) -> Result<(), String> {
+    open::that(&url).map_err(|e| e.to_string())
+}
+
+fn is_newer_version(current: &str, latest: &str) -> bool {
+    let parse = |v: &str| -> Vec<u32> {
+        v.split('.')
+            .filter_map(|s| s.parse().ok())
+            .collect()
+    };
+    let c = parse(current);
+    let l = parse(latest);
+    l > c
+}
+
 pub fn run() {
     let store = Arc::new(Mutex::new(AppStore::new()));
     let poller = Arc::new(Mutex::new(Poller::new()));
@@ -97,6 +152,8 @@ pub fn run() {
             save_settings,
             load_window_bounds,
             save_window_bounds,
+            check_update,
+            open_url,
         ])
         .setup(|app| {
             let show_i = MenuItem::with_id(app, "show", "显示监控窗口", true, None::<&str>)?;

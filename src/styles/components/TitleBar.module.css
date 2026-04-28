@@ -9,6 +9,9 @@
 .menuActive .menuTitle { color: white; }
 .menuArrow { font-size: 8px; color: var(--text-tertiary); margin-left: 2px; }
 .menuActive .menuArrow { color: white; }
+.updateBadge { color: var(--accent); font-size: 10px; animation: pulse 2s ease-in-out infinite; }
+.menuActive .updateBadge { color: #fff; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 .pcName { font-size: 11px; color: var(--text-secondary); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status { font-size: 10px; padding: 1px 6px; border-radius: 10px; background: var(--bg-tertiary); }
 .online { color: var(--success); }
