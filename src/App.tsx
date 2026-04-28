@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'preact/hooks'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'preact/hooks'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { TitleBar } from '@/components/TitleBar'
 import { Dashboard } from '@/components/Dashboard'
@@ -15,6 +15,7 @@ export function App() {
   const [pinned, setPinned] = useState(false)
 
   const appWindow = useMemo(() => getCurrentWindow(), [])
+  const prevScaleRef = useRef(settings?.dpi_scale ?? 100)
 
   useEffect(() => {
     if (!settings) return
@@ -23,6 +24,27 @@ export function App() {
       return () => clearTimeout(t)
     }
   }, [settings])
+
+  useEffect(() => {
+    if (!settings) return
+    const currentScale = settings.dpi_scale
+    const prevScale = prevScaleRef.current
+    prevScaleRef.current = currentScale
+
+    if (prevScale === currentScale) return
+
+    const applyScale = async () => {
+      try {
+        const { LogicalSize } = await import('@tauri-apps/api/dpi')
+        const size = await appWindow.innerSize()
+        const factor = currentScale / prevScale
+        const newW = Math.round(size.width * factor)
+        const newH = Math.round(size.height * factor)
+        await appWindow.setSize(new LogicalSize(newW, newH))
+      } catch {}
+    }
+    applyScale()
+  }, [settings?.dpi_scale, appWindow])
 
   useEffect(() => {
     const loadBounds = async () => {
@@ -85,7 +107,6 @@ export function App() {
   const rootStyle = useMemo(() => ({
     fontSize: `${settings?.font_size ?? 13}px`,
     fontFamily: settings?.font_family ?? 'inherit',
-    '--dpi-scale': (settings?.dpi_scale ?? 100) / 100,
     '--theme-mode': isDark ? 'dark' : 'light',
   }), [settings, isDark])
 
@@ -97,6 +118,7 @@ export function App() {
         pcName={data?.pc_name ?? ''}
         status={status}
         pinned={pinned}
+        settingsOpen={settingsOpen}
         onToggleSettings={() => setSettingsOpen((v) => !v)}
         onTogglePin={handleTogglePin}
         onHideToTray={handleHideToTray}
@@ -107,6 +129,7 @@ export function App() {
       <Settings
         open={settingsOpen}
         settings={settings}
+        data={data}
         status={status}
         onUpdate={updateSettings}
         onConnect={handleConnect}
@@ -116,6 +139,7 @@ export function App() {
       <Dashboard
         data={data}
         columnMode={settings.column_mode}
+        hiddenDevices={settings.hidden_devices}
         status={status}
       />
       <StatusBar status={status} />

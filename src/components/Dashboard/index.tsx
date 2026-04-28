@@ -7,6 +7,7 @@ import styles from '@/styles/components/Dashboard.module.css'
 interface DashboardProps {
   data: ParsedData | null
   columnMode: ColumnMode
+  hiddenDevices: string[]
   status: PollStatus
 }
 
@@ -19,9 +20,11 @@ function computeColumns(columnMode: ColumnMode, containerWidth: number, deviceCo
   return Math.max(1, Math.min(cols, 4))
 }
 
-export const Dashboard = memo(function Dashboard({ data, columnMode, status }: DashboardProps) {
+export const Dashboard = memo(function Dashboard({ data, columnMode, hiddenDevices, status }: DashboardProps) {
   const { ref, width } = useResizeObserver<HTMLDivElement>()
-  const columns = computeColumns(columnMode, width, data?.devices.length ?? 0)
+
+  const visibleDevices = data?.devices.filter((d) => !hiddenDevices.includes(d.name)) ?? []
+  const columns = computeColumns(columnMode, width, visibleDevices.length)
 
   if (!data || !data.devices.length) {
     const errorMsg = status.type === 'error' ? status.message : null
@@ -53,9 +56,23 @@ export const Dashboard = memo(function Dashboard({ data, columnMode, status }: D
     )
   }
 
+  if (!visibleDevices.length) {
+    return (
+      <div class={styles.dashboard} ref={ref}>
+        <div class={styles.empty}>
+          <div class={styles.emptyData}>
+            <span class={styles.emptyIcon}>👁️</span>
+            <span>所有硬件模块已隐藏</span>
+            <span class={styles.emptySub}>在设置 → 布局 中取消隐藏</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div class={styles.dashboard} ref={ref} style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
-      {data.devices.map((device) => (
+      {visibleDevices.map((device) => (
         <DeviceCard key={device.name} device={device} />
       ))}
     </div>

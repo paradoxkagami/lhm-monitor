@@ -50,6 +50,7 @@ export interface AppSettings {
   font_size: number
   dpi_scale: number
   column_mode: ColumnMode
+  hidden_devices: string[]
 }
 
 export interface WindowBounds {

@@ -136,6 +136,8 @@ pub struct AppSettings {
     pub font_size: u32,
     pub dpi_scale: u32,
     pub column_mode: ColumnMode,
+    #[serde(default)]
+    pub hidden_devices: Vec<String>,
 }
 
 impl Default for AppSettings {
@@ -150,6 +152,7 @@ impl Default for AppSettings {
             font_size: 13,
             dpi_scale: 100,
             column_mode: ColumnMode::Auto,
+            hidden_devices: Vec::new(),
         }
     }
 }

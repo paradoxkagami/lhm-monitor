@@ -6,6 +6,7 @@ interface TitleBarProps {
   pcName: string
   status: PollStatus
   pinned: boolean
+  settingsOpen: boolean
   onToggleSettings: () => void
   onTogglePin: () => void
   onHideToTray: () => void
@@ -18,6 +19,7 @@ export const TitleBar = memo(function TitleBar({
   pcName,
   status,
   pinned,
+  settingsOpen,
   onToggleSettings,
   onTogglePin,
   onHideToTray,
@@ -39,15 +41,17 @@ export const TitleBar = memo(function TitleBar({
   return (
     <div class={styles.titlebar} data-tauri-drag-region>
       <div class={styles.left}>
-        <span class={styles.icon}>📊</span>
-        <span class={styles.title}>LHM Monitor</span>
+        <button class={`${styles.menuBtn} ${settingsOpen ? styles.menuActive : ''}`} onClick={onToggleSettings} title="设置菜单 (S)">
+          <span class={styles.icon}>📊</span>
+          <span class={styles.menuTitle}>LHM Monitor</span>
+          <span class={styles.menuArrow}>{settingsOpen ? '▲' : '▼'}</span>
+        </button>
         {pcName && <span class={styles.pcName}>{pcName}</span>}
         <span class={`${styles.status} ${statusClass}`}>
           {statusLabel}
         </span>
       </div>
       <div class={styles.right}>
-        <button class={styles.ctrlBtn} onClick={onToggleSettings} title="设置 (S)">⚙️</button>
         <button class={`${styles.ctrlBtn} ${pinned ? styles.active : ''}`} onClick={onTogglePin} title="置顶 (T)">📌</button>
         <button class={styles.ctrlBtn} onClick={onHideToTray} title="隐藏到托盘">🔽</button>
         <button class={styles.ctrlBtn} onClick={onMinimize} title="最小化">─</button>

@@ -1,7 +1,14 @@
 .titlebar { display: flex; align-items: center; justify-content: space-between; height: var(--titlebar-height); padding: 0 8px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); -webkit-app-region: drag; flex-shrink: 0; }
 .left { display: flex; align-items: center; gap: 8px; -webkit-app-region: no-drag; }
+.menuBtn { display: flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 4px; -webkit-app-region: no-drag; transition: background var(--transition-fast), color var(--transition-fast); cursor: pointer; }
+.menuBtn:hover { background: var(--bg-tertiary); }
+.menuActive { background: var(--accent); color: white; }
+.menuActive:hover { background: var(--accent-hover); }
 .icon { font-size: 14px; }
-.title { font-weight: 600; font-size: 12px; color: var(--text-primary); }
+.menuTitle { font-weight: 600; font-size: 12px; color: var(--text-primary); }
+.menuActive .menuTitle { color: white; }
+.menuArrow { font-size: 8px; color: var(--text-tertiary); margin-left: 2px; }
+.menuActive .menuArrow { color: white; }
 .pcName { font-size: 11px; color: var(--text-secondary); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status { font-size: 10px; padding: 1px 6px; border-radius: 10px; background: var(--bg-tertiary); }
 .online { color: var(--success); }

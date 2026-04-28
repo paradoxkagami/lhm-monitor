@@ -30,8 +30,6 @@ body {
   flex-direction: column;
   height: 100%;
   background: var(--bg-primary);
-  transform: scale(var(--dpi-scale, 1));
-  transform-origin: top left;
 }
 
 .window-hidden *,

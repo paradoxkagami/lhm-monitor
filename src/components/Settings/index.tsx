@@ -1,6 +1,6 @@
 import { memo } from '@/core/memo'
 import { useState } from 'preact/hooks'
-import type { AppSettings, PollStatus } from '@/core/types'
+import type { AppSettings, PollStatus, ParsedData } from '@/core/types'
 import { BasicTab } from './BasicTab'
 import { AppearanceTab } from './AppearanceTab'
 import { LayoutTab } from './LayoutTab'
@@ -9,6 +9,7 @@ import styles from '@/styles/components/Settings.module.css'
 interface SettingsProps {
   open: boolean
   settings: AppSettings
+  data: ParsedData | null
   status: PollStatus
   onUpdate: (partial: Partial<AppSettings>) => void
   onConnect: () => void
@@ -25,7 +26,7 @@ const TABS: { key: Tab; label: string }[] = [
 ]
 
 export const Settings = memo(function Settings({
-  open, settings, status, onUpdate, onConnect, onStop, onClose,
+  open, settings, data, status, onUpdate, onConnect, onStop, onClose,
 }: SettingsProps) {
   const [tab, setTab] = useState<Tab>('basic')
 
@@ -42,7 +43,7 @@ export const Settings = memo(function Settings({
       <div class={styles.body}>
         {tab === 'basic' && <BasicTab settings={settings} onUpdate={onUpdate} status={status} onConnect={onConnect} onStop={onStop} />}
         {tab === 'appearance' && <AppearanceTab settings={settings} onUpdate={onUpdate} />}
-        {tab === 'layout' && <LayoutTab settings={settings} onUpdate={onUpdate} />}
+        {tab === 'layout' && <LayoutTab settings={settings} data={data} onUpdate={onUpdate} />}
       </div>
     </div>
   )
