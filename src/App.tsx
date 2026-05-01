@@ -7,6 +7,17 @@ import { Settings } from '@/components/Settings'
 import { StatusBar } from '@/components/StatusBar'
 import { useSettings, usePolling, useTheme } from '@/hooks'
 
+const GENERIC_FONTS = new Set(['sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'system-ui'])
+
+const formatFontFamily = (family: string): string => {
+  return family
+    .split(',')
+    .map((f) => f.trim().replace(/^"|"$/g, ''))
+    .filter(Boolean)
+    .map((f) => (GENERIC_FONTS.has(f.toLowerCase()) ? f : `"${f}"`))
+    .join(', ')
+}
+
 interface UpdateInfo {
   has_update: boolean
   latest_version: string
@@ -17,7 +28,7 @@ interface UpdateInfo {
 export function App() {
   const { settings, updateSettings } = useSettings()
   const { status, data, start, stop } = usePolling()
-  const { isDark } = useTheme(settings?.theme)
+  useTheme(settings?.theme)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
@@ -123,16 +134,21 @@ export function App() {
     appWindow.hide()
   }, [appWindow])
 
-  const rootStyle = useMemo(() => ({
-    fontSize: `${settings?.font_size ?? 13}px`,
-    fontFamily: settings?.font_family ?? 'inherit',
-    '--theme-mode': isDark ? 'dark' : 'light',
-  }), [settings, isDark])
+  const fontSize = settings?.font_size ?? 13
+  const fontFamily = settings?.font_family ?? ''
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--font-size-base', `${fontSize}px`)
+    if (fontFamily) {
+      root.style.setProperty('--font-family', formatFontFamily(fontFamily))
+    }
+  }, [fontSize, fontFamily])
 
   if (!settings) return null
 
   return (
-    <div class="app-shell" style={rootStyle}>
+    <div class="app-shell">
       <TitleBar
         pcName={data?.pc_name ?? ''}
         status={status}

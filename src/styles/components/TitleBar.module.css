@@ -4,21 +4,21 @@
 .menuBtn:hover { background: var(--bg-tertiary); }
 .menuActive { background: var(--accent); color: white; }
 .menuActive:hover { background: var(--accent-hover); }
-.icon { font-size: 14px; }
-.menuTitle { font-weight: 600; font-size: 12px; color: var(--text-primary); }
+.icon { font-size: 1.08em; }
+.menuTitle { font-weight: 600; font-size: 0.92em; color: var(--text-primary); }
 .menuActive .menuTitle { color: white; }
-.menuArrow { font-size: 8px; color: var(--text-tertiary); margin-left: 2px; }
+.menuArrow { font-size: 0.62em; color: var(--text-tertiary); margin-left: 2px; }
 .menuActive .menuArrow { color: white; }
-.updateBadge { color: var(--accent); font-size: 10px; animation: pulse 2s ease-in-out infinite; }
+.updateBadge { color: var(--accent); font-size: 0.77em; animation: pulse 2s ease-in-out infinite; }
 .menuActive .updateBadge { color: #fff; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-.pcName { font-size: 11px; color: var(--text-secondary); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.status { font-size: 10px; padding: 1px 6px; border-radius: 10px; background: var(--bg-tertiary); }
+.pcName { font-size: 0.85em; color: var(--text-secondary); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status { font-size: 0.77em; padding: 1px 6px; border-radius: 10px; background: var(--bg-tertiary); }
 .online { color: var(--success); }
 .offline { color: var(--danger); }
 .idle { color: var(--text-tertiary); }
 .right { display: flex; align-items: center; gap: 2px; -webkit-app-region: no-drag; }
-.ctrlBtn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 4px; font-size: 12px; color: var(--text-secondary); -webkit-app-region: no-drag; transition: background var(--transition-fast), color var(--transition-fast); }
+.ctrlBtn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 4px; font-size: 0.92em; color: var(--text-secondary); -webkit-app-region: no-drag; transition: background var(--transition-fast), color var(--transition-fast); }
 .ctrlBtn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
 .active { color: var(--accent); }
 .closeBtn:hover { background: var(--danger); color: white; }

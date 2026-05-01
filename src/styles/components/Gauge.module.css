@@ -1,20 +1,24 @@
-.gauge { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.gauge { display: flex; align-items: center; gap: 8px; }
+.ring { position: relative; flex-shrink: 0; }
 .svg { display: block; }
-.track { stroke: var(--bg-tertiary); }
-.fill { transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease; }
-.valueWrap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: baseline; gap: 1px; }
-.value { font-size: 20px; font-weight: 700; line-height: 1; }
-.unit { font-size: 11px; color: var(--text-tertiary); }
-.label { font-size: 10px; color: var(--text-tertiary); margin-top: -2px; }
+.seg { fill: var(--bg-tertiary); transition: fill 0.4s ease; }
+.segActive { filter: drop-shadow(0 0 3px currentColor); }
+.marker { opacity: 0.9; transition: fill 0.4s ease; }
+
+.readout { display: flex; flex-direction: column; gap: 2px; }
+.readoutRow { display: flex; align-items: baseline; gap: 2px; }
+.readoutValue { font-size: 1.85em; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.readoutUnit { font-size: 0.85em; font-weight: 600; opacity: 0.7; }
+.readoutLabel { font-size: 0.62em; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.1em; text-transform: uppercase; }
 
 .tempBar { display: flex; align-items: center; gap: 6px; }
-.tempName { font-size: 10px; color: var(--text-secondary); width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+.tempName { font-size: 0.77em; color: var(--text-secondary); width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
 .tempTrack { flex: 1; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden; }
 .tempFill { height: 100%; border-radius: 3px; transition: width 0.4s ease, background 0.4s ease; }
-.tempValue { font-size: 10px; font-weight: 500; width: 42px; text-align: right; flex-shrink: 0; }
+.tempValue { font-size: 0.77em; font-weight: 500; width: 42px; text-align: right; flex-shrink: 0; }
 
 .sensorRow { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
-.sensorName { font-size: 10px; color: var(--text-tertiary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sensorValue { font-size: 11px; font-weight: 500; color: var(--text-primary); }
-.sensorUnit { font-size: 9px; color: var(--text-tertiary); margin-left: 2px; }
-.sensorRange { font-size: 9px; color: var(--text-tertiary); }
+.sensorName { font-size: 0.77em; color: var(--text-tertiary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sensorValue { font-size: 0.85em; font-weight: 500; color: var(--text-primary); }
+.sensorUnit { font-size: 0.69em; color: var(--text-tertiary); margin-left: 2px; }
+.sensorRange { font-size: 0.69em; color: var(--text-tertiary); }

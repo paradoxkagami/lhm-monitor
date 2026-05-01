@@ -147,7 +147,7 @@ impl Default for AppSettings {
             port: 8085,
             interval: 3,
             theme: ThemeMode::Dark,
-            font_family: "Segoe UI Variable, \"Microsoft YaHei\", \"PingFang SC\", sans-serif"
+            font_family: "Segoe UI Variable, Microsoft YaHei, PingFang SC, sans-serif"
                 .to_string(),
             font_size: 13,
             dpi_scale: 100,

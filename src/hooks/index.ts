@@ -72,7 +72,9 @@ export function useTheme(externalMode: string = 'dark') {
   const isDark = mode === 'auto' ? systemDark : mode === 'dark'
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
+    const root = document.documentElement
+    root.setAttribute('data-theme', isDark ? 'dark' : 'light')
+    root.style.colorScheme = isDark ? 'dark' : 'light'
   }, [isDark])
 
   return { isDark }

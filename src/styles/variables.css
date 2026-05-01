@@ -1,4 +1,6 @@
 :root {
+  --font-size-base: 13px;
+  --font-family: 'Segoe UI Variable', 'Microsoft YaHei', 'PingFang SC', sans-serif;
   --bg-primary: #1c1c1e;
   --bg-secondary: #2c2c2e;
   --bg-tertiary: #3a3a3c;

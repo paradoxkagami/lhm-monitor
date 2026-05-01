@@ -67,7 +67,7 @@ export const LayoutTab = memo(function LayoutTab({ settings, data, onUpdate }: L
       </label>
       <label class={styles.field}>
         <span>字体族</span>
-        <select class={styles.select} value={settings.font_family.split(',')[0].replace(/"/g, '')} onChange={(e) => { const val = e.currentTarget.value; onUpdate({ font_family: `"${val}", "Microsoft YaHei", "PingFang SC", sans-serif` }) }}>
+        <select class={styles.select} value={settings.font_family.split(',')[0].trim().replace(/^"|"$/g, '')} onChange={(e) => { const val = e.currentTarget.value; onUpdate({ font_family: `${val}, Microsoft YaHei, PingFang SC, sans-serif` }) }}>
           {FONT_FAMILIES.map((f) => <option key={f} value={f}>{f}</option>)}
         </select>
       </label>
