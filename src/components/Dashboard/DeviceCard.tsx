@@ -60,7 +60,7 @@ export const DeviceCard = memo(
       ? findSensor(device.sensors, 'Temperature', ['core', 'gpu'], ['hot spot', 'hotspot', 'memory', '显存', 'vram'])
       : undefined
     const vramLoad = isGpu
-      ? findSensor(device.sensors, 'Load', ['memory', '显存', 'vram', 'dedicated', 'd3d'])
+      ? findSensor(device.sensors, 'Load', ['memory', '显存', 'vram'], ['d3d', 'compute', 'core', 'bus', 'video engine', 'decoder', 'encoder'])
       : undefined
     const coreClock = isGpu
       ? findSensor(device.sensors, 'Clock', ['core', 'gpu'], ['memory', '显存', 'vram', 'shader'])
