@@ -87,8 +87,6 @@ lhm-monitor/
 │   │   └── store.rs           # 设置持久化
 │   ├── Cargo.toml
 │   └── tauri.conf.json
-├── legacy/                    # 旧版归档
-│   └── v2-electron-preact/    # v2 Electron 版本
 ├── package.json
 ├── vite.config.ts
 └── tsconfig.json
