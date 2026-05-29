@@ -96,8 +96,41 @@ lhm-monitor/
 
 ## 版本历史
 
+### v3.2.0
+
+**性能优化**
+- `std::sync::Mutex` → `tokio::sync::Mutex`：消除 async 上下文中的线程阻塞
+- `std::fs` → `tokio::fs`：所有文件 I/O 改为非阻塞异步操作
+- 500ms `has_update()` 轮询 → `tokio::sync::Notify` 事件驱动：空闲时零 CPU 消耗
+- 前端 `setInterval` 数据拉取 → `poll-status` 事件驱动：消除冗余轮询
+- 窗口位置保存：5 秒定时器 → `onResized`/`onMoved` 事件 + 2 秒防抖
+- 动态 `import()` → 静态 import：零延迟 API 调用
+
+**GPU 仪表盘重构**
+- GPU 设备卡片从单个负载仪表环扩展为 7 项仪表环横排布局
+- 新增：核心温度、显存温度、热点温度、核心频率、显存占用、Package 功耗
+- `GaugeRing` 组件扩展 `max`/`isTemp` 属性，支持温度和功耗的非百分比弧度填充
+- `flex-wrap` 响应式换行，窄屏自动分行排列
+
+**代码质量**
+- `TempBar`：移除 `(value / 100) * 100` 无效计算
+- CSS：提取重复 `@keyframes pulse` 到 `global.css`，消除 2 处重复定义
+- `memo.ts`：`Record<string, any>` → 泛型 `Comparer<P>`，移除 `as any` 类型断言
+- `unlisten.then(fn => fn())` → `unlisten.then((fn) => fn())`：消除参数名歧义
+- 移除未使用的 `getStatus()` API 导出
+- `SensorCategory`/`DeviceType`/`DeviceColor` 改为内部类型（去掉 `export`）
+- Rust `LHMNode` 移除多余的 `Serialize` 派生
+
+**项目清理**
+- 删除 `legacy/v2-electron-preact/`（Electron v2 旧版代码）
+- 删除 `v3/`（空壳目录）
+- 删除 `refactor-design/ARCHITECTURE.md`（已过时的设计文档）
+
+---
+
 | 版本 | 框架 | 安装包大小 | 说明 |
 |------|------|-----------|------|
+| v3.2 | Tauri 2 + Rust | ~3.9MB | 性能优化 + GPU 仪表盘重构 |
 | v3 | Tauri 2 + Rust | ~2.5MB | 当前版本，Rust 后端 |
 | v2 | Electron + Preact | ~80MB | 首次 Preact 重写 |
 | v1 | Electron + Vanilla JS | ~80MB | 初始版本 |

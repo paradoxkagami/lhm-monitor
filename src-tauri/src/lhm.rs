@@ -362,10 +362,30 @@ pub fn parse_lhm_data(json: &LHMResponse) -> ParsedData {
             let mut sensors = Vec::new();
             collect_all_sensors(node, &mut sensors);
 
-            let load = sensors
-                .iter()
-                .find(|s| s.category == SensorCategory::Load && s.load_percent.is_some())
-                .and_then(|s| s.load_percent);
+            let load = if device_type == DeviceType::GPU {
+                sensors
+                    .iter()
+                    .find(|s| {
+                        s.category == SensorCategory::Load
+                            && s.load_percent.is_some()
+                            && {
+                                let n = s.name.to_lowercase();
+                                (n.contains("core") || n.contains("gpu")) && !n.contains("memory") && !n.contains("vram") && !n.contains("bus") && !n.contains("video engine")
+                            }
+                    })
+                    .and_then(|s| s.load_percent)
+                    .or_else(|| {
+                        sensors
+                            .iter()
+                            .find(|s| s.category == SensorCategory::Load && s.load_percent.is_some())
+                            .and_then(|s| s.load_percent)
+                    })
+            } else {
+                sensors
+                    .iter()
+                    .find(|s| s.category == SensorCategory::Load && s.load_percent.is_some())
+                    .and_then(|s| s.load_percent)
+            };
 
             let max_temp = sensors
                 .iter()
