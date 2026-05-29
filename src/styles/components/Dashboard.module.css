@@ -33,6 +33,8 @@
 .body { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
 .gaugeWrap { display: flex; justify-content: center; padding: 4px 0; }
 
+.gaugeRow { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 6px; padding: 4px 0; }
+
 .maxTemp { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; background: var(--bg-primary); border-radius: 4px; }
 .maxTempLabel { font-size: 0.77em; color: var(--text-tertiary); }
 .maxTempValue { font-size: 1.08em; font-weight: 600; }

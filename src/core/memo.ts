@@ -1,7 +1,7 @@
 import { createElement, Component } from 'preact'
 import type { FunctionalComponent } from 'preact'
 
-function shallowEqual(a: Record<string, any>, b: Record<string, any>): boolean {
+function shallowEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
   if (a === b) return true
   const keysA = Object.keys(a)
   const keysB = Object.keys(b)
@@ -12,17 +12,17 @@ function shallowEqual(a: Record<string, any>, b: Record<string, any>): boolean {
   return true
 }
 
-type Comparer = (prev: Record<string, any>, next: Record<string, any>) => boolean
+type Comparer<P> = (prev: P, next: P) => boolean
 
-export function memo<P extends Record<string, any>>(
+export function memo<P>(
   c: FunctionalComponent<P>,
-  comparer?: Comparer,
+  comparer?: Comparer<P>,
 ): FunctionalComponent<P> {
-  const compare = comparer ?? shallowEqual
+  const compare = comparer ?? (shallowEqual as Comparer<P>)
 
   class Memoed extends Component<P> {
     shouldComponentUpdate(nextProps: P) {
-      return !compare(this.props as Record<string, any>, nextProps as Record<string, any>)
+      return !compare(this.props, nextProps)
     }
 
     render() {

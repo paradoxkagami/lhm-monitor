@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'preact/hooks'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { LogicalSize, LogicalPosition } from '@tauri-apps/api/dpi'
 import { invoke } from '@tauri-apps/api/core'
+import { loadWindowBounds, saveWindowBounds } from '@/core/api'
 import { TitleBar } from '@/components/TitleBar'
 import { Dashboard } from '@/components/Dashboard'
 import { Settings } from '@/components/Settings'
@@ -65,7 +67,6 @@ export function App() {
 
     const applyScale = async () => {
       try {
-        const { LogicalSize } = await import('@tauri-apps/api/dpi')
         const size = await appWindow.innerSize()
         const factor = currentScale / prevScale
         const newW = Math.round(size.width * factor)
@@ -77,17 +78,7 @@ export function App() {
   }, [settings?.dpi_scale, appWindow])
 
   useEffect(() => {
-    const loadBounds = async () => {
-      const { loadWindowBounds } = await import('@/core/api')
-      const bounds = await loadWindowBounds()
-      try {
-        await appWindow.setSize(new (await import('@tauri-apps/api/dpi')).LogicalSize(bounds.width, bounds.height))
-        await appWindow.setPosition(new (await import('@tauri-apps/api/dpi')).LogicalPosition(bounds.x, bounds.y))
-      } catch {}
-    }
-
-    const saveBounds = async () => {
-      const { saveWindowBounds } = await import('@/core/api')
+    const storeBounds = async () => {
       try {
         const size = await appWindow.outerSize()
         const pos = await appWindow.outerPosition()
@@ -95,11 +86,31 @@ export function App() {
       } catch {}
     }
 
+    const loadBounds = async () => {
+      const bounds = await loadWindowBounds()
+      try {
+        await appWindow.setSize(new LogicalSize(bounds.width, bounds.height))
+        await appWindow.setPosition(new LogicalPosition(bounds.x, bounds.y))
+      } catch {}
+    }
+
     loadBounds()
 
-    const unlistenResize = setInterval(saveBounds, 5000)
+    let debounceTimer: ReturnType<typeof setTimeout> | undefined
 
-    return () => clearInterval(unlistenResize)
+    const debouncedStore = () => {
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(storeBounds, 2000)
+    }
+
+    const unlistenResize = appWindow.onResized(debouncedStore)
+    const unlistenMove = appWindow.onMoved(debouncedStore)
+
+    return () => {
+      clearTimeout(debounceTimer)
+      unlistenResize.then((fn) => fn())
+      unlistenMove.then((fn) => fn())
+    }
   }, [appWindow])
 
   const handleConnect = useCallback(() => {

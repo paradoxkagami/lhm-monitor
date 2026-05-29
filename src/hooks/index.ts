@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'preact/hooks'
+import { useState, useEffect, useCallback } from 'preact/hooks'
 import type { AppSettings, PollStatus, ParsedData } from '@/core/types'
 import * as api from '@/core/api'
 
@@ -25,30 +25,25 @@ export function usePolling() {
   const [status, setStatus] = useState<PollStatus>({ type: 'idle' })
   const [data, setData] = useState<ParsedData | null>(null)
   const [running, setRunning] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setInterval>>()
 
   useEffect(() => {
     const unlisten = api.onPollStatus((s) => {
       setStatus(s)
+      if (s.type === 'polling') {
+        api.getData().then((d) => { if (d) setData(d) })
+      }
     })
-    return () => { unlisten.then(fn => fn()) }
+    return () => { unlisten.then((unlistenFn) => unlistenFn()) }
   }, [])
 
   const start = useCallback(async (ip: string, port: number, interval: number) => {
     setRunning(true)
     setStatus({ type: 'connecting' })
     await api.connect(ip, port, interval)
-
-    clearInterval(timerRef.current)
-    timerRef.current = setInterval(async () => {
-      const d = await api.getData()
-      if (d) setData(d)
-    }, 500)
   }, [])
 
   const stop = useCallback(async () => {
     setRunning(false)
-    clearInterval(timerRef.current)
     await api.disconnect()
     setStatus({ type: 'idle' })
   }, [])

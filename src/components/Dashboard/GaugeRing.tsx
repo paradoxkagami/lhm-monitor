@@ -1,5 +1,5 @@
 import { memo } from '@/core/memo'
-import { getLoadColor } from '@/core/types'
+import { getLoadColor, getTempColor } from '@/core/types'
 import styles from '@/styles/components/Gauge.module.css'
 
 interface GaugeRingProps {
@@ -7,6 +7,8 @@ interface GaugeRingProps {
   label: string
   unit?: string
   size?: number
+  max?: number
+  isTemp?: boolean
 }
 
 const SEGMENTS = 20
@@ -33,15 +35,16 @@ function segPath(cx: number, cy: number, r: number, sw: number, startDeg: number
 }
 
 export const GaugeRing = memo(
-  function GaugeRing({ value, label, unit = '%', size = 72 }: GaugeRingProps) {
+  function GaugeRing({ value, label, unit = '%', size = 72, max, isTemp = false }: GaugeRingProps) {
     const strokeWidth = 5
     const radius = (size - strokeWidth - 8) / 2
     const cx = size / 2
     const cy = size / 2
-    const progress = Math.min(value, 100)
-    const color = getLoadColor(progress)
+    const progress = max && max > 0 ? Math.min((value / max) * 100, 100) : Math.min(value, 100)
+    const color = isTemp ? getTempColor(value) : getLoadColor(progress)
     const filledSegs = Math.round((progress / 100) * SEGMENTS)
     const segSpan = (ARC_SPAN - SEG_GAP * (SEGMENTS - 1)) / SEGMENTS
+    const displayValue = isTemp ? value.toFixed(1) : String(Math.round(value))
 
     const segments = Array.from({ length: SEGMENTS }, (_, i) => {
       const startDeg = ARC_START + i * (segSpan + SEG_GAP)
@@ -71,7 +74,7 @@ export const GaugeRing = memo(
         </div>
         <div class={styles.readout}>
           <div class={styles.readoutRow}>
-            <span class={styles.readoutValue} style={{ color }}>{Math.round(progress)}</span>
+            <span class={styles.readoutValue} style={{ color }}>{displayValue}</span>
             <span class={styles.readoutUnit} style={{ color }}>{unit}</span>
           </div>
           <span class={styles.readoutLabel}>{label}</span>
@@ -79,5 +82,5 @@ export const GaugeRing = memo(
       </div>
     )
   },
-  (prev, next) => prev.value === next.value && prev.label === next.label
+  (prev, next) => prev.value === next.value && prev.label === next.label && prev.max === next.max
 )

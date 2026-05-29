@@ -39,19 +39,19 @@ async fn disconnect(state: tauri::State<'_, AppState>) -> Result<(), String> {
 #[tauri::command]
 async fn get_data(state: tauri::State<'_, AppState>) -> Result<Option<lhm::ParsedData>, String> {
     let poller = state.poller.lock().await;
-    Ok(poller.data())
+    Ok(poller.data().await)
 }
 
 #[tauri::command]
 async fn get_status(state: tauri::State<'_, AppState>) -> Result<lhm::PollStatus, String> {
     let poller = state.poller.lock().await;
-    Ok(poller.status().clone())
+    Ok(poller.status().await)
 }
 
 #[tauri::command]
 async fn load_settings(state: tauri::State<'_, AppState>) -> Result<lhm::AppSettings, String> {
     let store = state.store.lock().await;
-    Ok(store.load_settings())
+    Ok(store.load_settings().await)
 }
 
 #[tauri::command]
@@ -60,13 +60,13 @@ async fn save_settings(
     settings: lhm::AppSettings,
 ) -> Result<(), String> {
     let store = state.store.lock().await;
-    store.save_settings(&settings)
+    store.save_settings(&settings).await
 }
 
 #[tauri::command]
 async fn load_window_bounds(state: tauri::State<'_, AppState>) -> Result<lhm::WindowBounds, String> {
     let store = state.store.lock().await;
-    Ok(store.load_window_bounds())
+    Ok(store.load_window_bounds().await)
 }
 
 #[tauri::command]
@@ -75,7 +75,7 @@ async fn save_window_bounds(
     bounds: lhm::WindowBounds,
 ) -> Result<(), String> {
     let store = state.store.lock().await;
-    store.save_window_bounds(&bounds)
+    store.save_window_bounds(&bounds).await
 }
 
 #[derive(serde::Serialize)]
@@ -140,7 +140,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(AppState {
-            poller,
+            poller: poller.clone(),
             store,
         })
         .invoke_handler(tauri::generate_handler![
@@ -155,7 +155,7 @@ pub fn run() {
             check_update,
             open_url,
         ])
-        .setup(|app| {
+        .setup(move |app| {
             let show_i = MenuItem::with_id(app, "show", "显示监控窗口", true, None::<&str>)?;
             let hide_i = MenuItem::with_id(app, "hide", "隐藏监控窗口", true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "退出程序", true, None::<&str>)?;
@@ -197,15 +197,17 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            let poller_handle = app.state::<AppState>().poller.clone();
+            let notify = {
+                let poller = tauri::async_runtime::block_on(poller.lock());
+                poller.notifier()
+            };
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                let mut interval = tokio::time::interval(std::time::Duration::from_millis(500));
                 loop {
-                    interval.tick().await;
-                    let poller = poller_handle.lock().await;
-                    if poller.has_update() {
-                        let status = poller.status().clone();
+                    notify.notified().await;
+                    {
+                        let poller = poller.lock().await;
+                        let status = poller.status().await;
                         let _ = app_handle.emit("poll-status", &status);
                     }
                 }

@@ -11,7 +11,6 @@
 .menuActive .menuArrow { color: white; }
 .updateBadge { color: var(--accent); font-size: 0.77em; animation: pulse 2s ease-in-out infinite; }
 .menuActive .updateBadge { color: #fff; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 .pcName { font-size: 0.85em; color: var(--text-secondary); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .status { font-size: 0.77em; padding: 1px 6px; border-radius: 10px; background: var(--bg-tertiary); }
 .online { color: var(--success); }

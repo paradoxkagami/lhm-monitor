@@ -17,9 +17,9 @@ export interface ParsedSensor {
   load_percent?: number
 }
 
-export type DeviceType = 'CPU' | 'GPU' | 'Motherboard' | 'Memory' | 'Storage'
+type DeviceType = 'CPU' | 'GPU' | 'Motherboard' | 'Memory' | 'Storage'
 
-export interface DeviceColor {
+interface DeviceColor {
   hue: number
   label: string
 }

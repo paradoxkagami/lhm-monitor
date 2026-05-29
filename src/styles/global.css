@@ -59,3 +59,8 @@ select {
   transition: border-color var(--transition-fast);
 }
 input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

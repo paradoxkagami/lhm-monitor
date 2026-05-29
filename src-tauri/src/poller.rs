@@ -1,13 +1,14 @@
 use crate::lhm::{self, LHMResponse, ParsedData, PollStatus};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::sync::{Mutex, Notify};
 
 pub struct Poller {
     data: Arc<Mutex<Option<ParsedData>>>,
     status: Arc<Mutex<PollStatus>>,
     running: Arc<AtomicBool>,
-    update_flag: Arc<AtomicBool>,
+    notify: Arc<Notify>,
 }
 
 impl Poller {
@@ -16,15 +17,19 @@ impl Poller {
             data: Arc::new(Mutex::new(None)),
             status: Arc::new(Mutex::new(PollStatus::Idle)),
             running: Arc::new(AtomicBool::new(false)),
-            update_flag: Arc::new(AtomicBool::new(false)),
+            notify: Arc::new(Notify::new()),
         }
+    }
+
+    pub fn notifier(&self) -> Arc<Notify> {
+        self.notify.clone()
     }
 
     pub async fn start(&mut self, ip: String, port: u16, interval_secs: u64) -> Result<(), String> {
         self.stop().await;
         self.running.store(true, Ordering::SeqCst);
-        *self.status.lock().unwrap() = PollStatus::Connecting;
-        self.update_flag.store(true, Ordering::Relaxed);
+        *self.status.lock().await = PollStatus::Connecting;
+        self.notify.notify_one();
 
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(5))
@@ -35,7 +40,7 @@ impl Poller {
         let base_url = format!("http://{}:{}", ip, port);
         let interval = Duration::from_secs(interval_secs);
         let running = self.running.clone();
-        let update_flag = self.update_flag.clone();
+        let notify = self.notify.clone();
         let data = self.data.clone();
         let status = self.status.clone();
 
@@ -64,8 +69,8 @@ impl Poller {
                                     Ok(json) => {
                                         let parsed = lhm::parse_lhm_data(&json);
 
-                                        *data.lock().unwrap() = Some(parsed);
-                                        *status.lock().unwrap() = PollStatus::Polling {
+                                        *data.lock().await = Some(parsed);
+                                        *status.lock().await = PollStatus::Polling {
                                             latency_ms,
                                             last_update: Some(
                                                 std::time::SystemTime::now()
@@ -75,28 +80,28 @@ impl Poller {
                                             ),
                                             retry_count: 0,
                                         };
-                                        update_flag.store(true, Ordering::Relaxed);
+                                        notify.notify_one();
                                         retry_count = 0;
                                     }
                                     Err(e) => {
                                         let preview: String = text.chars().take(200).collect();
                                         let msg = format!("JSON解析失败: {} (响应前200字符: {})", e, preview);
-                                        *status.lock().unwrap() = PollStatus::Error {
+                                        *status.lock().await = PollStatus::Error {
                                             message: msg,
                                             retry_count,
                                         };
-                                        update_flag.store(true, Ordering::Relaxed);
+                                        notify.notify_one();
                                         retry_count += 1;
                                     }
                                 }
                             }
                             Err(e) => {
                                 let msg = format!("读取响应失败: {}", e);
-                                *status.lock().unwrap() = PollStatus::Error {
+                                *status.lock().await = PollStatus::Error {
                                     message: msg,
                                     retry_count,
                                 };
-                                update_flag.store(true, Ordering::Relaxed);
+                                notify.notify_one();
                                 retry_count += 1;
                             }
                         }
@@ -112,11 +117,11 @@ impl Poller {
                         } else {
                             format!("网络错误: {}", e)
                         };
-                        *status.lock().unwrap() = PollStatus::Error {
+                        *status.lock().await = PollStatus::Error {
                             message: msg,
                             retry_count,
                         };
-                        update_flag.store(true, Ordering::Relaxed);
+                        notify.notify_one();
                         retry_count += 1;
                     }
                 }
@@ -138,19 +143,15 @@ impl Poller {
 
     pub async fn stop(&mut self) {
         self.running.store(false, Ordering::SeqCst);
-        *self.status.lock().unwrap() = PollStatus::Idle;
-        self.update_flag.store(true, Ordering::Relaxed);
+        *self.status.lock().await = PollStatus::Idle;
+        self.notify.notify_one();
     }
 
-    pub fn data(&self) -> Option<ParsedData> {
-        self.data.lock().unwrap().clone()
+    pub async fn data(&self) -> Option<ParsedData> {
+        self.data.lock().await.clone()
     }
 
-    pub fn status(&self) -> PollStatus {
-        self.status.lock().unwrap().clone()
-    }
-
-    pub fn has_update(&self) -> bool {
-        self.update_flag.swap(false, Ordering::Relaxed)
+    pub async fn status(&self) -> PollStatus {
+        self.status.lock().await.clone()
     }
 }

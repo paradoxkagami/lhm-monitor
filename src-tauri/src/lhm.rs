@@ -31,7 +31,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[allow(non_snake_case)]
 pub struct LHMNode {
     pub Text: String,

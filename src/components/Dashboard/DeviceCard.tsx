@@ -1,5 +1,5 @@
 import { memo } from '@/core/memo'
-import type { ParsedDevice } from '@/core/types'
+import type { ParsedDevice, ParsedSensor } from '@/core/types'
 import { GaugeRing } from './GaugeRing'
 import { TempBar } from './TempBar'
 import { SensorRow } from './SensorRow'
@@ -8,6 +8,17 @@ import styles from '@/styles/components/Dashboard.module.css'
 interface DeviceCardProps {
   device: ParsedDevice
   gaugeSize?: number
+}
+
+function findSensor(sensors: ParsedSensor[], category: string, keywords: string[], exclude?: string[]): ParsedSensor | undefined {
+  return sensors.find((s) => {
+    if (s.category !== category) return false
+    const lower = s.name.toLowerCase()
+    const match = keywords.some((kw) => lower.includes(kw.toLowerCase()))
+    if (!match) return false
+    if (exclude && exclude.some((ex) => lower.includes(ex.toLowerCase()))) return false
+    return true
+  })
 }
 
 function renderSensors(device: ParsedDevice) {
@@ -36,6 +47,29 @@ function renderSensors(device: ParsedDevice) {
 export const DeviceCard = memo(
   function DeviceCard({ device, gaugeSize = 90 }: DeviceCardProps) {
     const hue = device.color.hue
+    const isGpu = device.type === 'GPU'
+    const gpuGaugeSize = 70
+
+    const hotspot = isGpu
+      ? findSensor(device.sensors, 'Temperature', ['hot spot', 'hotspot', '热点'])
+      : undefined
+    const vramTemp = isGpu
+      ? findSensor(device.sensors, 'Temperature', ['memory', '显存', 'vram'])
+      : undefined
+    const coreTemp = isGpu
+      ? findSensor(device.sensors, 'Temperature', ['core', 'gpu'], ['hot spot', 'hotspot', 'memory', '显存', 'vram'])
+      : undefined
+    const vramLoad = isGpu
+      ? findSensor(device.sensors, 'Load', ['memory', '显存', 'vram', 'dedicated', 'd3d'])
+      : undefined
+    const coreClock = isGpu
+      ? findSensor(device.sensors, 'Clock', ['core', 'gpu'], ['memory', '显存', 'vram', 'shader'])
+      : undefined
+    const packagePower = isGpu
+      ? findSensor(device.sensors, 'Power', ['package', 'total', 'gpu'])
+      : undefined
+
+    const hasGpuGauges = isGpu && (hotspot || vramTemp || coreTemp || vramLoad || coreClock || packagePower)
 
     return (
       <div class={styles.card} style={{ '--card-hue': hue }}>
@@ -47,9 +81,33 @@ export const DeviceCard = memo(
         </div>
         <div class={styles.body}>
           {device.load !== undefined && device.load !== null && (
-            <div class={styles.gaugeWrap}>
-              <GaugeRing value={device.load} label="Load" unit="%" size={gaugeSize} />
-            </div>
+            hasGpuGauges ? (
+              <div class={styles.gaugeRow}>
+                {coreTemp && (
+                  <GaugeRing value={coreTemp.value} label="核心温度" unit="°C" size={gpuGaugeSize} max={coreTemp.max} isTemp />
+                )}
+                {vramTemp && (
+                  <GaugeRing value={vramTemp.value} label="显存温度" unit="°C" size={gpuGaugeSize} max={vramTemp.max} isTemp />
+                )}
+                <GaugeRing value={device.load} label="负载" unit="%" size={gpuGaugeSize} />
+                {hotspot && (
+                  <GaugeRing value={hotspot.value} label="热点温度" unit="°C" size={gpuGaugeSize} max={hotspot.max} isTemp />
+                )}
+                {coreClock && (
+                  <GaugeRing value={coreClock.value} label="核心频率" unit="MHz" size={gpuGaugeSize} max={coreClock.max} />
+                )}
+                {vramLoad && (
+                  <GaugeRing value={vramLoad.load_percent ?? vramLoad.value} label="显存占用" unit="%" size={gpuGaugeSize} />
+                )}
+                {packagePower && (
+                  <GaugeRing value={packagePower.value} label="Package功耗" unit="W" size={gpuGaugeSize} max={packagePower.max} />
+                )}
+              </div>
+            ) : (
+              <div class={styles.gaugeWrap}>
+                <GaugeRing value={device.load} label="Load" unit="%" size={gaugeSize} />
+              </div>
+            )
           )}
           {device.max_temp !== undefined && device.max_temp !== null && (
             <div class={styles.maxTemp}>

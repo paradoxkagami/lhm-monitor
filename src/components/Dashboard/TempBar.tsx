@@ -10,7 +10,7 @@ interface TempBarProps {
 
 export const TempBar = memo(
   function TempBar({ name, value }: TempBarProps) {
-    const pct = Math.min((value / 100) * 100, 100)
+    const pct = Math.min(value, 100)
     const color = getTempColor(value)
 
     return (

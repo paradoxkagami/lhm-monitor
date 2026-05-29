@@ -14,10 +14,6 @@ export async function getData(): Promise<ParsedData | null> {
   return invoke('get_data')
 }
 
-export async function getStatus(): Promise<PollStatus> {
-  return invoke('get_status')
-}
-
 export async function loadSettings(): Promise<AppSettings> {
   return invoke('load_settings')
 }

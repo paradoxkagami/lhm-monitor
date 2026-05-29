@@ -5,8 +5,3 @@
 .error { color: var(--danger); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .connecting { color: var(--warning); animation: pulse 1.5s ease-in-out infinite; }
 .idleText { color: var(--text-tertiary); }
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
