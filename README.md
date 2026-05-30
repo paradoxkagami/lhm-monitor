@@ -1,8 +1,6 @@
 # LHM Monitor v3
 
-> 局域网 LibreHardwareMonitor 硬件监控桌面工具
-> <img width="539" height="262" alt="image" src="https://github.com/user-attachments/assets/29caa96c-303a-452d-9d75-62a614750957" />
-
+> 局域网 LibreHardwareMonitor 硬件监控桌面工具 —— Tauri 2 + Preact 重写版
 
 ## 功能特点
 
