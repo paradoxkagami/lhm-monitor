@@ -1,5 +1,5 @@
 import { memo } from '@/core/memo'
-import type { ParsedDevice, ParsedSensor } from '@/core/types'
+import { getTempColor, type ParsedDevice, type ParsedSensor } from '@/core/types'
 import { GaugeRing } from './GaugeRing'
 import { TempBar } from './TempBar'
 import { SensorRow } from './SensorRow'
@@ -112,13 +112,7 @@ export const DeviceCard = memo(
           {device.max_temp !== undefined && device.max_temp !== null && (
             <div class={styles.maxTemp}>
               <span class={styles.maxTempLabel}>最高温度</span>
-              <span
-                class={styles.maxTempValue}
-                style={{
-                  color:
-                    device.max_temp >= 85 ? '#f87171' : device.max_temp >= 70 ? '#fb923c' : '#4ade80',
-                }}
-              >
+              <span class={styles.maxTempValue} style={{ color: getTempColor(device.max_temp) }}>
                 {device.max_temp.toFixed(1)}°C
               </span>
             </div>

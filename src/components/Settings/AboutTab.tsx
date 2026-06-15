@@ -1,14 +1,8 @@
 import { memo } from '@/core/memo'
 import { useState, useCallback } from 'preact/hooks'
 import { invoke } from '@tauri-apps/api/core'
+import type { UpdateInfo } from '@/core/types'
 import styles from '@/styles/components/Settings.module.css'
-
-interface UpdateInfo {
-  has_update: boolean
-  latest_version: string
-  current_version: string
-  html_url: string
-}
 
 type CheckState = 'idle' | 'checking' | 'up-to-date' | 'available' | 'error'
 

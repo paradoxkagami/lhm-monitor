@@ -3,29 +3,13 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { LogicalSize, LogicalPosition } from '@tauri-apps/api/dpi'
 import { invoke } from '@tauri-apps/api/core'
 import { loadWindowBounds, saveWindowBounds } from '@/core/api'
+import type { UpdateInfo } from '@/core/types'
 import { TitleBar } from '@/components/TitleBar'
 import { Dashboard } from '@/components/Dashboard'
 import { Settings } from '@/components/Settings'
 import { StatusBar } from '@/components/StatusBar'
 import { useSettings, usePolling, useTheme } from '@/hooks'
-
-const GENERIC_FONTS = new Set(['sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'system-ui'])
-
-const formatFontFamily = (family: string): string => {
-  return family
-    .split(',')
-    .map((f) => f.trim().replace(/^"|"$/g, ''))
-    .filter(Boolean)
-    .map((f) => (GENERIC_FONTS.has(f.toLowerCase()) ? f : `"${f}"`))
-    .join(', ')
-}
-
-interface UpdateInfo {
-  has_update: boolean
-  latest_version: string
-  current_version: string
-  html_url: string
-}
+import { formatFontFamily } from '@/core/utils'
 
 export function App() {
   const { settings, updateSettings } = useSettings()
@@ -50,12 +34,10 @@ export function App() {
   }, [])
 
   useEffect(() => {
-    if (!settings) return
-    if (settings.ip) {
-      const t = setTimeout(() => start(settings.ip, settings.port, settings.interval), 500)
-      return () => clearTimeout(t)
-    }
-  }, [settings])
+    if (!settings?.ip) return
+    const t = setTimeout(() => start(settings.ip, settings.port, settings.interval), 500)
+    return () => clearTimeout(t)
+  }, [settings?.ip, settings?.port, settings?.interval, start])
 
   useEffect(() => {
     if (!settings) return

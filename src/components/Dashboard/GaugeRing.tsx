@@ -1,4 +1,5 @@
 import { memo } from '@/core/memo'
+import { useMemo } from 'preact/hooks'
 import { getLoadColor, getTempColor } from '@/core/types'
 import styles from '@/styles/components/Gauge.module.css'
 
@@ -46,12 +47,15 @@ export const GaugeRing = memo(
     const segSpan = (ARC_SPAN - SEG_GAP * (SEGMENTS - 1)) / SEGMENTS
     const displayValue = isTemp ? value.toFixed(1) : String(Math.round(value))
 
-    const segments = Array.from({ length: SEGMENTS }, (_, i) => {
-      const startDeg = ARC_START + i * (segSpan + SEG_GAP)
-      const d = segPath(cx, cy, radius, strokeWidth, startDeg, segSpan)
-      const isActive = i < filledSegs
-      return { d, isActive, key: i }
-    })
+    const segments = useMemo(
+      () => Array.from({ length: SEGMENTS }, (_, i) => {
+        const startDeg = ARC_START + i * (segSpan + SEG_GAP)
+        const d = segPath(cx, cy, radius, strokeWidth, startDeg, segSpan)
+        const isActive = i < filledSegs
+        return { d, isActive, key: i }
+      }),
+      [cx, cy, radius, strokeWidth, filledSegs, segSpan]
+    )
 
     return (
       <div class={styles.gauge}>

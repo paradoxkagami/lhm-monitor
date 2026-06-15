@@ -79,3 +79,10 @@ export function getTempColor(temp: number): string {
   if (temp >= 50) return '#facc15'
   return '#4ade80'
 }
+
+export interface UpdateInfo {
+  has_update: boolean
+  latest_version: string
+  current_version: string
+  html_url: string
+}

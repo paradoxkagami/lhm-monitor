@@ -1,13 +1,6 @@
 import { memo } from '@/core/memo'
 import styles from '@/styles/components/TitleBar.module.css'
-import type { PollStatus } from '@/core/types'
-
-interface UpdateInfo {
-  has_update: boolean
-  latest_version: string
-  current_version: string
-  html_url: string
-}
+import type { PollStatus, UpdateInfo } from '@/core/types'
 
 interface TitleBarProps {
   pcName: string
